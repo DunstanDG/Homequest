@@ -43,6 +43,7 @@ import { activitiesOnDay, arrivalDayOn, bornBabies, expectedBabies, focusOnDay }
 import { cancelTaskReminder, EventSheet, Group, KIND_EMOJI, PART_LABEL, TaskLine, TaskSheet, upcomingWeekAnchor, usePeople, useBalance } from './shared'
 import { useCalm, type FocusMode } from '@/app/calm'
 import { doneToastText } from '@/ui/celebrateLogic'
+import { WeekFocusBlock } from './WeekFocusToday'
 import { dumpForViewer, firstThen, nextUpOrder, pickNext, plannedAt, rowKey } from '@/family/calmToday'
 import { dayPlanOf } from '@/family/travel/daily'
 import { DoneToday, FirstThenStrip, FocusControl, FreshStartButton, NextUpCard } from './calmParts'
@@ -352,6 +353,7 @@ export function Today() {
     braindump: <BrainDumpBlock child={me.role === 'child' ? me.id : isChild ? view.id : undefined} />,
     done: <DoneTodayBlock view={view} now={now} />,
     goal: <FamilyGoalBlock />,
+    week: <WeekFocusBlock />,
     learning: isChild && (
       <>
         <SectionHead title="Learning" action={<Link to="/learn" className="link-btn">Play</Link>} />
