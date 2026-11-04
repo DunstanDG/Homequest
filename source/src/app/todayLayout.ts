@@ -5,7 +5,7 @@
  */
 import { useSyncExternalStore } from 'react'
 
-export type BlockId = 'needs' | 'plan' | 'checkin' | 'school' | 'baby' | 'timeline' | 'todo' | 'braindump' | 'learning' | 'together' | 'care' | 'dump' | 'extras'
+export type BlockId = 'needs' | 'plan' | 'checkin' | 'school' | 'baby' | 'timeline' | 'todo' | 'braindump' | 'done' | 'goal' | 'learning' | 'together' | 'care' | 'dump' | 'extras'
 
 export interface BlockDef {
   id: BlockId
@@ -28,6 +28,8 @@ export const BLOCKS: Record<BlockId, BlockDef> = {
   together: { id: 'together', emoji: '🎉', label: 'Coming up together', hint: 'Family plans in the next few days' },
   care: { id: 'care', emoji: '🍼', label: 'Care', hint: 'Baby, pets and plants at a glance (for children: the care jobs they help with)' },
   braindump: { id: 'braindump', emoji: '🧠', label: 'Brain dump', hint: 'Open items from the brain dump, with quick add' },
+  done: { id: 'done', emoji: '🌟', label: 'Look what you did', hint: 'What you have finished today (never what is missed)' },
+  goal: { id: 'goal', emoji: '🎯', label: 'Family goal', hint: 'Shared progress towards a family goal' },
   dump: { id: 'dump', emoji: '🧠', label: 'Evening brain dump', hint: 'The nudge to empty your head, at your set time' },
   extras: { id: 'extras', emoji: '🛒', label: 'Shopping, dinner and trivia', hint: 'Small tiles' },
 }
@@ -37,10 +39,10 @@ export type LayoutKind = 'adult' | 'child'
 /** The default order. A parent looking at a child's day sees Needs you first. */
 export function defaultOrder(kind: LayoutKind, parentViewingChild = false): BlockId[] {
   if (kind === 'child') {
-    const base: BlockId[] = ['school', 'plan', 'checkin', 'todo', 'braindump', 'care', 'timeline', 'learning', 'needs', 'together', 'extras']
+    const base: BlockId[] = ['school', 'plan', 'checkin', 'todo', 'braindump', 'care', 'timeline', 'learning', 'done', 'goal', 'needs', 'together', 'extras']
     return parentViewingChild ? ['needs', ...base.filter((b) => b !== 'needs')] : base
   }
-  return ['needs', 'plan', 'checkin', 'baby', 'timeline', 'todo', 'braindump', 'together', 'care', 'dump', 'extras']
+  return ['needs', 'plan', 'checkin', 'baby', 'timeline', 'todo', 'braindump', 'together', 'done', 'goal', 'care', 'dump', 'extras']
 }
 
 export interface SavedLayout {

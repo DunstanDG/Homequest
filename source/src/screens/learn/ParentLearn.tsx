@@ -1,3 +1,5 @@
+import { WeekDots } from '@/screens/family/rewards/WeekDots'
+import { lastSevenDays } from '@/screens/family/rewards/rewardsLogic'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp, useFamily, useLearner, useLearnerOf, useNow } from '@/app/context'
@@ -94,6 +96,8 @@ function KidCard({ m, now }: { m: Member; now: number }) {
   const todayXp = st.xpByDay[today] ?? 0
   const done = todayXp >= DAILY_QUEST_XP
   const alive = st.streak.lastDay === today
+  const playedOn = (d: string) => (st.xpByDay[d] ?? 0) > 0 || (st.attemptsByDay[d] ?? 0) > 0
+  const weekN = lastSevenDays(playedOn, today).count
   const lv = levelFromXp(st.xp)
   const packName = (id: string) => registry.packs.get(id)?.name ?? id
 
@@ -104,10 +108,10 @@ function KidCard({ m, now }: { m: Member; now: number }) {
         <div className="grow">
           <strong>{m.name}</strong>
           <small className="muted">Level {lv.level}</small>
+          <WeekDots played={playedOn} today={today} />
         </div>
-        <span className={`lq-streak${alive ? ' alive' : ''}`} title={alive ? 'Played today' : 'Not played yet today'}>
-          <Icon name="flame" size={18} /> {st.streak.current}
-          <span className="lq-sr"> day streak</span>
+        <span className={`lq-streak${alive ? ' alive' : ''}`} title={alive ? 'Played today' : 'Fancy a quick game?'}>
+          {weekN} of the last 7 days ⭐
         </span>
       </div>
 

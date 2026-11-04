@@ -9,6 +9,7 @@ import { Coins, MemberChips, SectionHead } from '@/ui/fam'
 import { Icon } from '@/ui/icons'
 import { Bar, Sheet } from '@/ui/primitives'
 import { useBalance, usePeople } from './shared'
+import '@/ui/celebrate.css'
 
 const STATUS: Record<string, { label: string; tone: string }> = {
   pending: { label: 'Waiting for a parent', tone: 'tone-warn' },
@@ -145,7 +146,15 @@ export function Shop() {
         </section>
       )}
 
-      <SectionHead title="Treats" sub={best && mine ? `${best.cost - (bal?.available ?? 0)} more coins for ${best.emoji} ${best.title}` : undefined} />
+      <SectionHead title="Treats" sub={!best && mine && treats.some((t) => canRedeem(f, view.id, t, bal?.available ?? 0, today).ok) ? 'You have enough for a treat. Treat yourself!' : undefined} />
+      {best && mine && (
+        <div className="shop-next card">
+          <p>
+            {best.cost - (bal?.available ?? 0)} more coins for {best.emoji} {best.title}
+          </p>
+          <Bar value={(bal?.available ?? 0) / best.cost} tone="xp" label={`Coins towards ${best.title}`} />
+        </div>
+      )}
       {treats.length === 0 && <p className="note">No treats yet. A parent can add them in Parent area, Family.</p>}
       <div className="treats">
         {treats.map((t) => {
