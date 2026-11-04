@@ -33,6 +33,17 @@ export const SESSION_TEMPLATES: SessionTemplate[] = [
     ],
   },
   {
+    id: 'leave',
+    title: 'Before we leave',
+    emoji: '🚪',
+    steps: [
+      { title: 'Shoes and coat on', minutes: 3, emoji: '👟' },
+      { title: 'Bag packed', minutes: 2, emoji: '🎒' },
+      { title: 'Water bottle and snack', minutes: 2, emoji: '💧' },
+      { title: 'Keys, phone, lights off', minutes: 1, emoji: '🔑' },
+    ],
+  },
+  {
     id: 'tidy',
     title: '20-minute tidy',
     emoji: '🧹',

@@ -63,13 +63,13 @@ export function NeedsYou({ today, now, onOpenItem, children }: { today: Ymd; now
       tone: 'warn',
     })
   if (parent && weekday(today) >= 4 && !f.summits[startOfWeek(today)])
-    rows.push({ key: 'summit', emoji: '🗓️', text: <strong>Weekly summit</strong>, sub: 'Five minutes to plan the week ahead', to: '/summit' })
+    rows.push({ key: 'summit', emoji: '🗓️', text: <strong>Weekly plan</strong>, sub: 'Five short steps to plan the week ahead', to: '/week' })
   if (serverOn(f)) {
     const ready = isThisWeeksReady(f, today, now)
     if (ready)
-      rows.push({ key: 'roundtable', emoji: '🪑', text: <strong>The round table is ready</strong>, sub: `${ready.agenda?.points.length ?? 0} things to talk about`, to: '/round-table' })
+      rows.push({ key: 'roundtable', emoji: '🪑', text: <strong>The round table is ready</strong>, sub: `${ready.agenda?.points.length ?? 0} things to talk about`, to: '/week' })
     else if (phaseOf(f, today, hmOf(now)) === 'raise')
-      rows.push({ key: 'roundtable', emoji: '🪑', text: <strong>Round table {whenText(rtSettingsOf(f))}</strong>, sub: 'Anything you want to raise?', to: '/round-table' })
+      rows.push({ key: 'roundtable', emoji: '🪑', text: <strong>Round table {whenText(rtSettingsOf(f))}</strong>, sub: 'Anything you want to raise?', to: '/week' })
   }
   if (help.length)
     rows.push({

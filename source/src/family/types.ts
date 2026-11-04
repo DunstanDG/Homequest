@@ -485,6 +485,9 @@ export interface RoutineEvent extends EventBase {
   plants?: boolean
   /** Which check-in shows this session as its routine. Set by routine setup; sessions made by hand are matched by name. */
   part?: 'morning' | 'evening'
+  /** Where it lives in Plan › Routines: a routine (morning, bedtime, before you leave) or a focus session (an admin
+   * hour, a tidy). Absent = worked out from the name and steps (see family/routineKind.ts). */
+  kind?: 'routine' | 'focus'
   deleted?: boolean
 }
 
@@ -1017,6 +1020,7 @@ export type FamilyEvent =
   | FamilyNameEvent
   | CommentEvent
   | SummitEvent
+  | WeekFocusEvent
   | DumpPromptSettingEvent
   | TriviaDoneEvent
   | CoinGoalEvent
@@ -1050,6 +1054,22 @@ export interface CommentEvent extends EventBase {
 export interface SummitEvent extends EventBase {
   type: 'summit'
   weekKey: string
+}
+
+/** One of "this week's 5" from the weekly plan. `ref` points back at what it came from (a task id, a brain-dump item
+ * id, a calendar item key; empty for something typed in); `title` is a copy, so it still reads well once that's gone. */
+export interface WeekFocusItem {
+  kind: 'task' | 'dump' | 'event' | 'note'
+  ref: string
+  title: string
+}
+
+/** "This week's 5", chosen at the end of the weekly plan (/week): up to five things that matter this week, so
+ * everything else can wait. Upsert by `weekOf` (the Monday): latest wins. An empty list clears it. */
+export interface WeekFocusEvent extends EventBase {
+  type: 'week-focus'
+  weekOf: Ymd
+  items: WeekFocusItem[]
 }
 
 /** Per-adult setting for the end-of-day brain-dump prompt, plus the last date they were shown (and dismissed or
@@ -1380,6 +1400,8 @@ export interface FamilyState {
   weekFix: Record<string, 'A' | 'B'>
   comments: Record<string, CommentEvent>
   summits: Record<string, SummitEvent>
+  /** weekOf (Monday) -> that week's "this week's 5". Latest wins. */
+  weekFocus: Record<Ymd, WeekFocusEvent>
   dumpPromptSettings: Record<MemberId, DumpPromptSettingEvent>
   triviaDone: Record<string, TriviaDoneEvent>
   goals: Record<string, CoinGoalEvent>

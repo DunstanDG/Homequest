@@ -23,7 +23,7 @@ export const PARENT_TOUR: TourCard[] = [
   { id: 'calendar', emoji: '📅', title: 'Calendar', body: 'Everyone’s plans, school and clubs together. Plans & ideas is where the family suggests things and votes.', to: '/calendar', tone: 'd' },
   { id: 'plan', emoji: '✅', title: 'Plan', body: 'Sessions with a timer, big projects in small steps, the brain dump, meals for the week and the shopping list.', to: '/plan', tone: 'e' },
   { id: 'care', emoji: '🍼', title: 'Care', body: 'The baby, the pets and the plants: feeds, walks and watering in a tap, and a dim night mode for 3am.', to: '/care', tone: 'a' },
-  { id: 'more', emoji: '🧭', title: 'More', body: 'Every part of HomeQuest in one list: the children’s school, learning and coins at the top, then the week, the house, care and settings. A count shows where something is waiting.', to: '/more', tone: 'b' },
+  { id: 'more', emoji: '🧭', title: 'More', body: 'The places that aren’t on a tab: the children’s school, learning and coins, the weekly plan, and Settings at the end. The search box at the top finds anything. A count shows where something is waiting.', to: '/more', tone: 'b' },
   { id: 'setup', emoji: '🧰', title: 'Now, a few things to set up', body: 'A short checklist that ticks itself off as you go. It stays on Today until it’s done, or you hide it.', tone: 'c' },
 ]
 
