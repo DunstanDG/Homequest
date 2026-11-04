@@ -43,25 +43,7 @@
 ## Release notes
 
 ```ts
-{
-  date: '2026-11-04',
-  area: 'Plan',
-  title: 'Plan a thing, one small step at a time',
-  body: 'Birthdays, trips, Christmas and more now come with a gentle set of small steps. Pick one, choose a date and each step turns up on the right day, one or two at a time.',
-  link: '/plan/new-thing',
-},
-{
-  date: '2026-11-04',
-  area: 'Plan',
-  title: 'Pick 3 for this week',
-  body: 'The brain dump now helps you choose just three things for the week. Everything else rests safely under “Saved for later”, and old things drift into “Someday” without any fuss.',
-  link: '/plan?t=dump',
-},
-{
-  date: '2026-11-04',
-  area: 'Plan',
-  title: 'Projects show the next step first',
-  body: 'Each project leads with its next small step and a Start button. The whole plan is one tap away when you want it.',
-  link: '/plan?t=projects',
-},
+{ id: '2026-11-04-plan-a-thing', date: '2026-11-04', audience: 'all', area: 'plan', emoji: '🎂', title: 'Plan a thing, one small step at a time', short: 'Plan a thing', body: 'Birthdays, trips, Christmas and more now come with a gentle set of small steps. Pick one, choose a date and each step turns up on the right day, one or two at a time.', to: '/plan/new-thing' },
+{ id: '2026-11-04-pick-three', date: '2026-11-04', audience: 'parent', area: 'plan', emoji: '3️⃣', title: 'Pick 3 for this week', short: 'Pick 3', body: 'The brain dump helps you choose just three things for the week. Everything else rests safely under “Saved for later”, and old things drift into “Someday” without any fuss.', to: '/plan?t=dump' },
+{ id: '2026-11-04-next-step-first', date: '2026-11-04', audience: 'all', area: 'plan', emoji: '👣', title: 'Projects show the next step first', short: 'Next step first', body: 'Each project leads with its next small step and a Start button. The whole plan is one tap away when you want it.', to: '/plan?t=projects' },
 ```
