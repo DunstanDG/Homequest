@@ -6,7 +6,7 @@ import * as P from './planActions'
 import { applyFamilyEvent, projectFamily } from './project'
 import { routineKindOf, routinesTabOf, sortForKind } from './routineKind'
 import type { FamilyState } from './types'
-import { focusCandidates, focusItemDone, looseEnds, planWeekOf, saveWeekFocus, shownWeekFocus, weekFocusFor } from './weekPlan'
+import { focusCandidates, focusItemDone, looseEnds, planWeekFor, planWeekOf, saveWeekFocus, shownWeekFocus, weekFocusFor, weekGlance } from './weekPlan'
 
 const T = (date: string, time = '12:00') => tsOf(date, time)
 const apply = (f: FamilyState, evs: AppEvent[]) => evs.reduce(applyFamilyEvent, f)
@@ -99,6 +99,16 @@ describe('candidates and loose ends', () => {
     expect(c.dump.map((d) => d.title)).toEqual(['Sort the loft'])
     // Same data, same order.
     expect(focusCandidates(f, '2026-11-02', '2026-11-02')).toEqual(c)
+  })
+
+  it('glances at the week in seven rows, with only what makes a day different', () => {
+    const f = setup()
+    const g = weekGlance(f, '2026-11-02')
+    expect(g.map((d) => d.date)).toEqual(['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07', '2026-11-08'])
+    expect(g[5]!.titles).toEqual(['Swimming'])
+    expect(g[2]!.titles).toEqual([]) // the parcel task is a task, not an event
+    // Without a round table, the plan week is the plain rule.
+    expect(planWeekFor(f, '2026-11-04')).toBe('2026-11-02')
   })
 
   it('counts loose ends kindly: open one-off tasks from before today, not repeating or finished ones', () => {

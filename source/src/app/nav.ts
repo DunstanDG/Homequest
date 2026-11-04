@@ -156,7 +156,7 @@ export const FEATURES: Feature[] = [
     id: 'week',
     emoji: '🧭',
     label: 'Weekly plan',
-    desc: 'Five short steps: what people raised, the week, loose ends, meals, and this week’s 5',
+    desc: 'A few short steps: things to raise, the week ahead, and this week’s 5',
     to: '/week',
     group: 'week',
     roles: BOTH,

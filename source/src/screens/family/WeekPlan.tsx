@@ -16,7 +16,7 @@ import { useApp, useFamily, useMe, useNow } from '@/app/context'
 import { addDays, dayName, startOfWeek, ymdOf } from '@/family/dates'
 import { currentRoundTable } from '@/family/travel/roundTable'
 import { serverOn } from '@/family/travel/travel'
-import { focusCandidates, focusItemDone, focusKey, planWeekOf, saveWeekFocus, shownWeekFocus, WEEK_FOCUS_MAX, type FocusCandidate } from '@/family/weekPlan'
+import { focusCandidates, focusItemDone, focusKey, planWeekFor, saveWeekFocus, shownWeekFocus, WEEK_FOCUS_MAX, type FocusCandidate } from '@/family/weekPlan'
 import type { WeekFocusItem } from '@/family/types'
 import { Icon } from '@/ui/icons'
 import { Raise, RoundTableSettings, RoundTableStatus, useRoundTableWeek, Week } from './RoundTable'
@@ -184,7 +184,7 @@ export function WeekPlan() {
   const now = useNow(60_000)
   const today = ymdOf(now)
   const parent = me.role === 'parent'
-  const weekOf = planWeekOf(today)
+  const weekOf = planWeekFor(f, today)
   const weekEnd = addDays(weekOf, 6)
   const rt = currentRoundTable(f, today)
   const notesWeek = useRoundTableWeek()
@@ -229,8 +229,8 @@ export function WeekPlan() {
       <div className="wk-body">
         {step === 'raised' && (
           <>
-            <RoundTableStatus />
             <Raise weekOf={notesWeek} bare />
+            <RoundTableStatus />
             <IdeasToAgree />
             {parent && serverOn(f) && <RoundTableSettings />}
           </>

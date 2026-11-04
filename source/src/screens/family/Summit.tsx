@@ -4,38 +4,33 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useFamily } from '@/app/context'
-import { makeCalCtx, itemsBetween } from '@/family/calendar'
-import { addDays, dayName, startOfWeek, weekday } from '@/family/dates'
+import { dayName, startOfWeek, weekday } from '@/family/dates'
 import { bornBabies } from '@/family/arrival/arrival'
 import { shiftPlanFor } from '@/family/shifts'
 import { ShiftCard } from './careShifts'
 import { HomeworkSummitStep } from './homeworkCards'
 import { dumpList, dumpState } from '@/family/dump'
 import { mealAt, weekDates } from '@/family/meals'
-import { looseEnds } from '@/family/weekPlan'
+import { looseEnds, weekGlance } from '@/family/weekPlan'
 import type { Member, Ymd } from '@/family/types'
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 
-/** What's coming up: the week's calendar, day by day (the first 8 things). */
+/** What's coming up: the week at a glance, one line per day with what makes that day different. */
 export function ComingUpStep({ weekOf }: { weekOf: Ymd }) {
   const f = useFamily()
-  const ctx = useMemo(() => makeCalCtx(f), [f])
-  const weekEnd = addDays(weekOf, 6)
-  const items = useMemo(() => Object.entries(itemsBetween(ctx, weekOf, weekEnd)).sort(([a], [b]) => a.localeCompare(b)).flatMap(([, list]) => list), [ctx, weekOf, weekEnd])
+  const days = useMemo(() => weekGlance(f, weekOf), [f, weekOf])
   return (
     <div className="card wk-card">
-      <p className="muted">{items.length ? `${plural(items.length, 'thing')} on the calendar, ${dayName(weekOf)} to ${dayName(weekEnd)}.` : 'Nothing on the calendar yet that week.'}</p>
-      {items.length > 0 && (
-        <ul className="log-list">
-          {items.slice(0, 8).map((it) => (
-            <li key={it.key}>
-              <span className="log-time">{dayName(it.date).slice(0, 3)}</span>
-              <span className="log-what">{it.title}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul className="log-list wk-glance">
+        {days.map((d) => (
+          <li key={d.date}>
+            <span className="log-time">{dayName(d.date).slice(0, 3)}</span>
+            <span className={`log-what${d.titles.length ? '' : ' muted'}`}>{d.titles.length ? d.titles.join(', ') : 'The usual'}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="muted small">“The usual” is school, clubs, meals and routines.</p>
       <Link to="/calendar" className="btn block">
         Open the calendar
       </Link>

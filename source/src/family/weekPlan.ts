@@ -8,12 +8,20 @@ import { makeEvent } from '@/engine/make'
 import { itemsBetween, makeCalCtx, type AgendaItem } from './calendar'
 import { addDays, dayName, startOfWeek, weekday } from './dates'
 import { dumpList, dumpState } from './dump'
+import { currentRoundTable } from './travel/roundTable'
 import type { FamilyState, MemberId, TaskEvent, WeekFocusItem, Ymd } from './types'
 
 export const WEEK_FOCUS_MAX = 5
 
 /** The week the plan is about: this week from Monday to Thursday; from Friday on, the week ahead. */
 export const planWeekOf = (today: Ymd): Ymd => (weekday(today) >= 4 ? addDays(startOfWeek(today), 7) : startOfWeek(today))
+
+/** The same, except that once the round table has moved on to next week (it can be set to any day), so does the plan,
+ * so its agenda and the rest of the steps are about the same week. */
+export function planWeekFor(f: FamilyState, today: Ymd): Ymd {
+  const rt = currentRoundTable(f, today)
+  return rt && rt.weekOf > startOfWeek(today) ? rt.weekOf : planWeekOf(today)
+}
 
 const itemKey = (i: Pick<WeekFocusItem, 'kind' | 'ref' | 'title'>) => `${i.kind}:${i.kind === 'note' ? i.title.trim().toLowerCase() : i.ref}`
 
@@ -40,7 +48,7 @@ export const weekFocusFor = (f: FamilyState, today: Ymd): WeekFocusItem[] => ite
 
 /** What the top of /week shows: the plan week's five or, from Friday until next week's are picked, this week's. */
 export function shownWeekFocus(f: FamilyState, today: Ymd): { weekOf: Ymd; items: WeekFocusItem[]; which: 'this' | 'next' } | undefined {
-  const plan = planWeekOf(today)
+  const plan = planWeekFor(f, today)
   const thisWeek = startOfWeek(today)
   if (itemsOf(f, plan).length) return { weekOf: plan, items: itemsOf(f, plan), which: plan === thisWeek ? 'this' : 'next' }
   if (plan !== thisWeek && itemsOf(f, thisWeek).length) return { weekOf: thisWeek, items: itemsOf(f, thisWeek), which: 'this' }
@@ -74,11 +82,23 @@ export function focusItemDone(f: FamilyState, i: WeekFocusItem): boolean {
   return false
 }
 
-export type FocusCandidate = WeekFocusItem & { key: string; sub: string }
-
 /** Calendar items worth picking as one of the five: the family's own events, school events and closures,
  * birthdays and clean-up days. Not lessons, clubs, meals or routines, which are the shape of every week. */
 const EVENT_SOURCES = new Set<AgendaItem['source']>(['cal', 'school-event', 'closure', 'birthday', 'arrival', 'house'])
+
+/** The week at a glance: one line per day, Monday to Sunday, with only the things that make a day different (the
+ * family's own events, school events and closures, birthdays, clean-up days). Always seven rows. */
+export function weekGlance(f: FamilyState, weekOf: Ymd): { date: Ymd; titles: string[] }[] {
+  const byDay = itemsBetween(makeCalCtx(f), weekOf, addDays(weekOf, 6))
+  return [0, 1, 2, 3, 4, 5, 6].map((n) => {
+    const date = addDays(weekOf, n)
+    const titles: string[] = []
+    for (const it of byDay[date] ?? []) if (EVENT_SOURCES.has(it.source) && !titles.includes(it.title)) titles.push(it.title)
+    return { date, titles }
+  })
+}
+
+export type FocusCandidate = WeekFocusItem & { key: string; sub: string }
 
 /** Things to choose the five from, in a fixed order: the week's events by day, then tasks (this week's by day, then
  * from before, then any time), then the brain dump (in its own order, leaving out "someday" and private thoughts). */
