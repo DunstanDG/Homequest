@@ -8,6 +8,7 @@ import { usePrivacy } from '@/app/usePrivacy'
 import { PrivateKeys } from '@/screens/family/PrivateKeys'
 import { addDays, fmtDuration, friendlyDay, ymdOf } from '@/family/dates'
 import { areasOf, dumpList, dumpMeta, dumpState, dumpTotals, parseDump } from '@/family/dump'
+import { dumpForViewer } from '@/family/calmToday'
 import { liveRoutines } from '@/family/routines'
 import { PEEK, PICK_LIMIT, pickToWeek, pickView, pickWindow, splitSomeday } from '@/family/planDump'
 import type { DumpEvent, DumpPriority, MemberId, Ymd } from '@/family/types'
@@ -54,8 +55,9 @@ export function Dump() {
   }
   const [showAllItems, setShowAllItems] = useState(false)
 
-  const items = dumpList(f, { area: area || undefined, ownerId: mineOnly ? me.id : undefined, q })
-  const finished = dumpList(f, { show: 'done' })
+  // Children only see what's theirs (assigned to them, or written by them): the grown-ups' admin stays with the grown-ups.
+  const items = dumpForViewer(f, dumpList(f, { area: area || undefined, ownerId: mineOnly ? me.id : undefined, q }), me.id)
+  const finished = dumpForViewer(f, dumpList(f, { show: 'done' }), me.id)
     .sort((a, b) => b.ts - a.ts)
     .slice(0, 30)
   const areas = areasOf(f)

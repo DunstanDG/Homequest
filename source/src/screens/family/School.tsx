@@ -14,6 +14,8 @@ import { cancelTaskReminder, Group, TaskLine, TaskSheet, upcomingWeekAnchor, use
 import { DroppedList, UntickSheet } from './homeworkAdmin'
 import { HomeworkTimeCard, PlanAllButton } from './homeworkCards'
 import { FreshStartButton } from './calmParts'
+import { calmOf } from '@/app/calm'
+import { doneToastText } from '@/ui/celebrateLogic'
 
 type Tab = 'now' | 'homework' | 'week' | 'clubs' | 'info'
 
@@ -28,7 +30,7 @@ function readPack(text: string): SchoolPack | string {
 }
 
 export function School() {
-  const { act, toast, sync } = useApp()
+  const { act, toast, sync, settings } = useApp()
   const f = useFamily()
   const ctx = useCalCtx()
   const me = useMe()!
@@ -137,7 +139,7 @@ export function School() {
     }
     const evs = A.completeTask(me.id, f, r.task, r.date, {}, Date.now())
     act(evs)
-    toast(evs[0]!.type === 'task-done' && evs[0]!.needsCheck ? 'Nice one! Coins arrive once a parent checks.' : `Done! +${r.task.coins} coins.`, { undo: () => act(A.undo(me.id, evs[0]!.id)) })
+    toast(doneToastText(calmOf(settings.calm).celebrate, r.task.coins ?? 0, evs[0]!.type === 'task-done' && !!evs[0]!.needsCheck), { undo: () => act(A.undo(me.id, evs[0]!.id)) })
     void cancelTaskReminder(sync, r.task.taskId)
   }
 

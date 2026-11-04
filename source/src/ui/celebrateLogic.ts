@@ -68,3 +68,13 @@ export function decideCelebration(calm: Pick<Calm, 'celebrate' | 'lowStim'>, env
     chime: !env.quietTimers,
   }
 }
+
+/**
+ * The toast shown after ticking something off (it carries the Undo button). When a celebration is showing the coins and
+ * a message, the toast just says "Done." so the two don't say the same thing twice; with celebrations off it says it all.
+ */
+export function doneToastText(celebrate: Calm['celebrate'], coins: number, pending: boolean): string {
+  if (celebrate !== 'off') return 'Done.'
+  if (pending) return coins ? `Nice one! ${coins} coins once a parent has checked it.` : 'Nice one! A parent will check it.'
+  return coins ? `Done! +${coins} coins.` : 'Done!'
+}

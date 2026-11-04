@@ -42,6 +42,7 @@ import { AgendaRow, ItemSheet } from './agenda'
 import { activitiesOnDay, arrivalDayOn, bornBabies, expectedBabies, focusOnDay } from '@/family/arrival/arrival'
 import { cancelTaskReminder, EventSheet, Group, KIND_EMOJI, PART_LABEL, TaskLine, TaskSheet, upcomingWeekAnchor, usePeople, useBalance } from './shared'
 import { useCalm, type FocusMode } from '@/app/calm'
+import { doneToastText } from '@/ui/celebrateLogic'
 import { dumpForViewer, firstThen, nextUpOrder, pickNext, plannedAt, rowKey } from '@/family/calmToday'
 import { dayPlanOf } from '@/family/travel/daily'
 import { DoneToday, FirstThenStrip, FocusControl, FreshStartButton, NextUpCard } from './calmParts'
@@ -119,7 +120,7 @@ export function Today() {
     act(evs)
     const ev = evs[0]!
     const pending = ev.type === 'task-done' && ev.needsCheck
-    toast(pending ? `Nice one! ${row.task.coins} coins once a parent has checked it.` : row.task.coins ? `Done! +${row.task.coins} coins.` : 'Done!', { undo: () => act(A.undo(me.id, ev.id)) })
+    toast(doneToastText(calm.celebrate, row.task.coins ?? 0, !!pending), { undo: () => act(A.undo(me.id, ev.id)) })
     void cancelTaskReminder(sync, row.task.taskId)
   }
 

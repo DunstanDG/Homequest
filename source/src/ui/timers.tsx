@@ -12,6 +12,8 @@ import { Icon } from './icons'
 import { Ring, Sheet, buzz } from './primitives'
 import { START_BONUS, startBonusEvents } from '@/screens/family/rewards/rewardsLogic'
 import { startWhiteNoise, type WhiteNoiseHandle } from './whiteNoise'
+import { calmOf } from '@/app/calm'
+import { doneToastText } from './celebrateLogic'
 
 /** Three soft beeps. Needs a user gesture earlier in the session (starting the timer counts). */
 export function playAlarm() {
@@ -247,7 +249,7 @@ export function MiniTimer({ timer }: { timer: TimerState }) {
 export function TimerScreen() {
   const { id } = useParams()
   const nav = useNavigate()
-  const { act, toast, sync } = useApp()
+  const { act, toast, sync, settings } = useApp()
   const f = useFamily()
   const me = useMe()
   const now = useNow(1000)
@@ -279,7 +281,7 @@ export function TimerScreen() {
     const evs = A.finishTimer(actor, f, t.id, elapsedMs(t, Date.now()), {}, Date.now())
     act(evs)
     const done = evs.find((e) => e.type === 'task-done')
-    if (done && done.type === 'task-done') toast(done.needsCheck ? `Nice one! ${done.coins} coins waiting for a parent to check.` : `Done! +${done.coins} coins.`)
+    if (done && done.type === 'task-done') toast(doneToastText(calmOf(settings.calm).celebrate, done.coins ?? 0, !!done.needsCheck))
     else toast('Timer finished.')
     if (t.purpose === 'sleep') void cancelNotificationFor(sync, sleepReminderTag(t.id))
     nav(-1)
