@@ -10,6 +10,7 @@ import { sleepReminderTag } from '@/family/notify'
 import { Avatar } from './fam'
 import { Icon } from './icons'
 import { Ring, Sheet, buzz } from './primitives'
+import { START_BONUS, startBonusEvents } from '@/screens/family/rewards/rewardsLogic'
 import { startWhiteNoise, type WhiteNoiseHandle } from './whiteNoise'
 
 /** Three soft beeps. Needs a user gesture earlier in the session (starting the timer counts). */
@@ -135,7 +136,7 @@ export function StartTimerSheet({
   defaultMinutes?: number
   purpose?: TimerState['purpose']
 }) {
-  const { act } = useApp()
+  const { act, repo, toast } = useApp()
   const me = useMe()
   const nav = useNavigate()
   const [mins, setMins] = useState<number | 0>(defaultMinutes)
@@ -149,7 +150,10 @@ export function StartTimerSheet({
   const go = () => {
     const m = custom ? Math.max(1, Math.min(600, Number(custom) || 0)) : mins
     const { timerId, events } = A.startTimer(me?.id ?? memberId, { memberId, label, plannedSec: m ? m * 60 : 0, taskId, taskDate: taskDate as never, purpose })
-    act(events)
+    // B: a small once-a-day bonus for getting started on something big (id from member + day, so phones never double up).
+    const bonus = purpose === 'focus' ? startBonusEvents(repo.family(), me?.id ?? memberId, memberId, { taskId, taskDate, plannedSec: m * 60 }) : []
+    act([...events, ...bonus])
+    if (bonus.length) toast(`+${START_BONUS} for getting started 💪`)
     onClose()
     nav(`/timer/${timerId}`)
   }

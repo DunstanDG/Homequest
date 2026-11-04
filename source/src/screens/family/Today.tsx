@@ -35,6 +35,7 @@ import { TodayBanner } from '@/screens/onboarding/Onboarding'
 import { defaultOrder, resolveLayout, useSavedLayout, type BlockId, type LayoutKind } from '@/app/todayLayout'
 import { EditTodaySheet } from './EditToday'
 import { KidCareCard } from './kidCare'
+import { DoneTodayBlock, FamilyGoalBlock } from './rewards/DoneToday'
 import { DropHomeworkSheet, UntickSheet } from './homeworkAdmin'
 import { isHereWeek } from '@/family/coparent'
 import { AgendaRow, ItemSheet } from './agenda'
@@ -255,6 +256,8 @@ export function Today() {
     timeline,
     todo: toDo,
     braindump: <BrainDumpBlock />,
+    done: <DoneTodayBlock view={view} now={now} />,
+    goal: <FamilyGoalBlock />,
     learning: isChild && (
       <>
         <SectionHead title="Learning" action={<Link to="/learn" className="link-btn">Play</Link>} />

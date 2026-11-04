@@ -1,3 +1,4 @@
+import { celebrateEvents } from '@/ui/celebrate'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import type { Registry } from '@/engine/registry'
 import type { AppEvent, LearnerState } from '@/engine/types'
@@ -250,7 +251,7 @@ export function AppProvider({ registry, children, demo = false }: { registry: Re
       unlockParent: () => void (unlockedUntil.current = Date.now() + PARENT_UNLOCK_MS),
       lockParent: () => void (unlockedUntil.current = 0),
       pinFor: (pin: string) => String(hashString(`studyquest-pin:${pin}`)),
-      act: (events) => repo.apply(events),
+      act: (events) => (repo.apply(events), celebrateEvents(repo, settings, events)),
       emitFor: (learnerId, body) => repo.apply([makeEvent(learnerId, body)]),
       toast: showToast,
       demo,

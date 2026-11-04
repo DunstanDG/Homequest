@@ -10,6 +10,8 @@ import { GAMES } from '@/games'
 import { Icon } from '@/ui/icons'
 import { SectionHead } from '@/ui/fam'
 import { Bar, Pill, Ring } from '@/ui/primitives'
+import { WeekDots } from './family/rewards/WeekDots'
+import { lastSevenDays, weekCopy } from './family/rewards/rewardsLogic'
 import { unseenNewsCount } from './News'
 import { ParentLearn } from './learn/ParentLearn'
 import { SubjectGrid } from './learn/SubjectGrid'
@@ -81,6 +83,8 @@ function LearnerHome({ onKids }: { onKids?: () => void }) {
   const played = (id: string) => state.sessions.some((s) => s.gameId === id)
   const newHere = state.totals.attempts === 0
   const streakAlive = state.streak.lastDay === today
+  const playedOn = (d: string) => (state.xpByDay[d] ?? 0) > 0 || (state.attemptsByDay[d] ?? 0) > 0
+  const week = weekCopy(lastSevenDays(playedOn, today).count, playedOn(today))
   const goals = Object.values(state.goals).filter((g) => g.active)
   const news = unseenNewsCount(state, settings)
   const f = useFamily()
@@ -128,10 +132,9 @@ function LearnerHome({ onKids }: { onKids?: () => void }) {
             <Icon name="flame" size={30} />
           </div>
           <div>
-            <strong>
-              {state.streak.current} day{state.streak.current === 1 ? '' : 's'}
-            </strong>
-            <small>{streakAlive ? 'streak safe today' : state.streak.current ? 'play today to keep it' : 'start a streak'}</small>
+            <strong>{week.head}</strong>
+            <small>{week.sub}</small>
+            <WeekDots played={playedOn} today={today} />
           </div>
         </div>
       </section>
