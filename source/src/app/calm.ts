@@ -81,3 +81,40 @@ export function useCalm(): Calm & { set(patch: Partial<CalmPrefs>): void; paused
     resume: () => set({ pauseUntil: undefined }),
   }
 }
+
+// ------------------------------------------------------------------ applying it app-wide (ui/calmShell.tsx)
+
+/** How much the whole app is scaled for each text size (CSS zoom on the app, see the end of styles.css). */
+export const CALM_ZOOM: Record<TextScale, number> = { normal: 1, large: 1.15, larger: 1.3 }
+
+/** Every class the calm shell may put on <html>. */
+export const CALM_CLASSES = ['calm-zoom', 'calm-text-large', 'calm-text-larger', 'calm-font-readable', 'calm-contrast-high', 'calm-low-stim', 'calm-no-countdowns'] as const
+
+/** The classes on <html> for these settings. */
+export function calmClasses(c: Pick<Calm, 'textScale' | 'font' | 'contrast' | 'lowStim' | 'hideCountdowns'>): string[] {
+  const out: string[] = []
+  if (c.textScale !== 'normal') out.push('calm-zoom', `calm-text-${c.textScale}`)
+  if (c.font === 'readable') out.push('calm-font-readable')
+  if (c.contrast === 'high') out.push('calm-contrast-high')
+  if (c.lowStim) out.push('calm-low-stim')
+  if (c.hideCountdowns) out.push('calm-no-countdowns')
+  return out
+}
+
+/**
+ * Demo and testing only: `?demo=1&calm=larger,readable,high,lowstim,nocount,quiet,one` sets those calm settings when
+ * the demo opens, so screenshots and the layout audit can see each mode.
+ */
+export function parseCalmOverride(q: string): Partial<CalmPrefs> {
+  const out: Partial<CalmPrefs> = {}
+  for (const w of q.toLowerCase().split(/[\s,]+/)) {
+    if (w === 'large' || w === 'larger' || w === 'normal') out.textScale = w
+    else if (w === 'readable') out.font = 'readable'
+    else if (w === 'high') out.contrast = 'high'
+    else if (w === 'lowstim') out.lowStim = true
+    else if (w === 'nocount') out.hideCountdowns = true
+    else if (w === 'full' || w === 'quiet' || w === 'off') out.celebrate = w
+    else if (w === 'one' || w === 'three' || w === 'all') out.focus = w
+  }
+  return out
+}

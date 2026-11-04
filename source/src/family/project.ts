@@ -61,6 +61,7 @@ export function emptyFamily(): FamilyState {
     summits: {},
     weekFocus: {},
     dumpPromptSettings: {},
+    calmPauses: {},
     triviaDone: {},
     goals: {},
     goalGifts: [],
@@ -252,6 +253,8 @@ export function applyFamilyEvent(prev: FamilyState, ev: AppEvent): FamilyState {
       return { ...prev, eventCount: prev.eventCount + 1, weekFocus: { ...prev.weekFocus, [ev.weekOf]: ev } }
     case 'dump-prompt-setting':
       return { ...prev, eventCount: prev.eventCount + 1, dumpPromptSettings: { ...prev.dumpPromptSettings, [ev.memberId]: ev } }
+    case 'calm-pause':
+      return { ...prev, eventCount: prev.eventCount + 1, calmPauses: { ...prev.calmPauses, [ev.memberId]: ev } }
     case 'habit':
       return { ...prev, eventCount: prev.eventCount + 1, habits: { ...prev.habits, [ev.habitId]: ev } }
     case 'habit-done':

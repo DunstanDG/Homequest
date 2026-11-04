@@ -31,6 +31,9 @@
   --tab-pad-b: max(6px, calc(env(safe-area-inset-bottom, 0px) - 14px));
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-variant-numeric: tabular-nums;
+  /* Calm settings (src/ui/calmShell.tsx): how much the app is scaled for larger text, and the focus ring. */
+  --calm-zoom: 1;
+  --calm-focus: #ffd166;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body, #root { height: 100%; margin: 0; }
@@ -531,3 +534,140 @@ sup, sub { font-size: 0.7em; line-height: 0; }
 .subject-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
 .subject-chips::-webkit-scrollbar { display: none; }
 .subject-chips .chip { flex: none; }
+
+/* ================================================================ C: calm and accessibility (0.18)
+   Classes on <html> come from the calm shell (src/ui/calmShell.tsx), from this phone's comfort settings. Note this
+   file loads before family.css/plan.css, so overrides of rules there need a more specific selector. */
+
+/* ---- Text size. Most sizes in the CSS are px, so instead of converting them all the whole app is zoomed (CSS zoom
+   scales text, spacing and tap targets together, the way phones' own display zoom does; layouts reflow to the
+   narrower width rather than spilling sideways). Everything in #root is zoomed, plus the sheets portalled to <body>.
+   Chromium and WebKit zoom vh/vw units too, so viewport-sized things inside are divided back by the zoom. */
+html.calm-text-large { --calm-zoom: 1.15; }
+html.calm-text-larger { --calm-zoom: 1.3; }
+html.calm-zoom #root > *, html.calm-zoom body > .sheet-wrap { zoom: var(--calm-zoom); }
+html.calm-zoom .sheet-wrap, html.calm-zoom .qscreen { height: calc(100dvh / var(--calm-zoom)); }
+html.calm-zoom .sheet { max-height: calc(100dvh / var(--calm-zoom) - 32px); }
+html.calm-zoom .timer-screen, html.calm-zoom .run-screen, html.calm-zoom .spell-play { min-height: calc(100dvh / var(--calm-zoom)); }
+html.calm-zoom .toast { max-width: min(calc(92vw / var(--calm-zoom)), 420px); }
+html.calm-zoom .fpanel { max-height: calc(62dvh / var(--calm-zoom)); }
+html.calm-zoom .need-list { max-height: calc(38dvh / var(--calm-zoom)); }
+html.calm-zoom .pick-list { max-height: calc(32dvh / var(--calm-zoom)); }
+html.calm-zoom .fig-passage { max-height: calc(46vh / var(--calm-zoom)); }
+html.calm-zoom .welcome-card { min-height: min(440px, calc(62vh / var(--calm-zoom))); }
+html.calm-zoom .spell-slots .slot { width: clamp(20px, calc((100vw / var(--calm-zoom) - 64px) / var(--n, 8)), 36px); }
+html.calm-zoom .fab { right: max(16px, calc((100vw / var(--calm-zoom) - 520px) / 2 + 16px)); }
+
+/* ---- Readable font: Atkinson Hyperlegible (bundled, loaded by src/ui/calmFont.ts), a little more air. */
+html.calm-font-readable { font-family: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; }
+html.calm-font-readable body { letter-spacing: 0.02em; word-spacing: 0.08em; line-height: 1.55; }
+html.calm-font-readable :is(p, li, small, .muted, .note, .lead) { line-height: 1.55; }
+
+/* ---- High contrast: brighter text and borders, darker surfaces, a strong focus ring everywhere. */
+html.calm-contrast-high {
+  --bg: #05070f; --bg2: #0a0e20; --surface: #0e1330; --surface2: #182050; --surface3: #263070;
+  --line: #8a94d6; --text: #ffffff; --muted: #dde2ff; --accent: #8ee3ff;
+}
+html.calm-contrast-high body { background: var(--bg); }
+html.calm-contrast-high :is(.card, .sheet, .seg, .chip, .btn:not(.primary), input:not([type='checkbox']):not([type='radio']), textarea, select) { border-color: var(--line); }
+html.calm-contrast-high .tabbar-item { color: var(--muted); }
+html.calm-contrast-high .tabbar-item.active { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+html.calm-contrast-high :focus-visible { outline: 3px solid var(--calm-focus); outline-offset: 2px; }
+
+/* ---- Low stimulation: soft, desaturated colours, no gradients, nothing that moves, blinks or pulses, quieter emoji.
+   (.meteor is a game's timing, see prefers-reduced-motion above.) */
+html.calm-low-stim {
+  --accent: #8fb3c4; --xp: #cbb98e; --good: #8dbfa6; --good-bg: rgba(141, 191, 166, 0.12); --bad: #c9a0a0; --bad-bg: rgba(201, 160, 160, 0.12);
+  --warn: #cbb08f; --care-warm: #cbb08f; --care-warm-bg: rgba(203, 176, 143, 0.12);
+}
+html.calm-low-stim body { background: var(--bg); }
+html.calm-low-stim :not(.meteor), html.calm-low-stim ::before, html.calm-low-stim ::after { animation: none !important; transition: none !important; }
+html.calm-low-stim :is(.card.callout, .badge.earned, .levelup, .pad-big, .nappy-pick button.on, .tile-btn, .mini-timer, .spell-card.right, .run-banner, .welcome-card, .ob-banner, .plant-due) { background: var(--surface) !important; }
+html.calm-low-stim :is(.wk-day.closed, .mo-day.closed) { background: var(--surface2) !important; }
+html.calm-low-stim [class*='emoji']:not(.emoji-field):not(.emoji-chips):not(.emoji-chips *):not(.calm-pill-emoji) { filter: grayscale(1) opacity(0.7); }
+html.calm-low-stim .dot { background: var(--muted); }
+
+/* ---- Hide ticking countdowns: "until 17:20" and a calm draining bar (timers, sessions, the transition banner). */
+.calm-drain { display: block; height: 6px; border-radius: 999px; background: var(--surface3); overflow: hidden; margin-top: 4px; }
+.calm-drain > i { display: block; height: 100%; border-radius: inherit; background: color-mix(in srgb, var(--accent) 70%, var(--surface3)); transition-property: width; transition-timing-function: linear; }
+.mt-clock.calm-clock { font-size: 15px; font-weight: 700; white-space: nowrap; color: var(--muted); }
+.timer-clock.calm-clock { font-size: 30px; letter-spacing: 0; }
+.run-clock.calm-clock { font-size: 24px; }
+:is(.timer-face, .run-face) .calm-drain { width: 140px; justify-self: center; }
+
+/* ---- The calm shell: the 🌿 Calm button, its sheet and the gentle banners. */
+.calm-ui :focus-visible, .calm-pill:focus-visible, .calm-seg-opt:has(input:focus-visible) { outline: 3px solid var(--calm-focus); outline-offset: 2px; }
+.calm-pill { appearance: none; cursor: pointer; color: var(--muted); font: inherit; }
+.calm-pill.bar { order: -1; flex: none; width: 48px; min-height: 44px; display: grid; justify-items: center; align-content: start; gap: 2px; padding: 6px 2px; margin-right: 2px; background: none; border: 0; border-radius: 12px; font-size: 12px; }
+.calm-pill-emoji { font-size: 19px; line-height: 24px; }
+.calm-pill.corner { position: fixed; z-index: 24; left: 10px; bottom: calc(var(--safe-b) + 4px); width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; padding: 0; background: var(--surface2); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); opacity: 0.9; }
+/* Full-screen pages (no tab bar) keep a slim strip at the bottom for the corner button, so it never covers content;
+   the timer and session screens, which fill the screen, fit above it. */
+.calm-pill.corner.lifted { bottom: calc(var(--tab-pad-b) + 84px); }
+html.calm-corner-on .app-body.no-tabs { margin-bottom: calc(52px + var(--safe-b)); }
+html.calm-corner-on :is(.timer-screen, .run-screen) { min-height: calc(100dvh / var(--calm-zoom) - 52px - var(--safe-b)); }
+
+.calm-banners { display: grid; gap: 6px; width: 100%; max-width: 520px; margin: 0 auto; padding: max(6px, env(safe-area-inset-top)) 12px 0; flex: none; }
+.calm-banners:empty { padding: 0; }
+.calm-banner { display: flex; align-items: flex-start; gap: 10px; padding: 8px 4px 8px 12px; border-radius: 14px; background: var(--surface2); border: 1px solid var(--line); }
+.calm-banner.help { border-color: color-mix(in srgb, var(--good) 50%, var(--line)); }
+.calm-banner-emoji { font-size: 22px; line-height: 28px; flex: none; }
+.calm-banner-text { flex: 1; min-width: 0; display: grid; gap: 2px; padding-top: 2px; }
+.calm-banner-text strong { font-size: 15px; line-height: 1.3; }
+.calm-banner-text small { color: var(--muted); font-size: 13px; }
+.calm-banner-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.calm-banner-btns .btn { min-height: 44px; }
+.icon-btn.calm-x { flex: none; width: 44px; height: 44px; color: var(--muted); }
+
+.calm-intro { margin: 2px 0 10px; }
+.calm-status { display: grid; gap: 2px; padding: 10px 12px; margin: 0 0 10px; border-radius: 14px; background: var(--good-bg); border: 1px solid color-mix(in srgb, var(--good) 40%, transparent); }
+.calm-options { display: grid; gap: 8px; margin: 0 0 6px; }
+.calm-option { appearance: none; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 10px 12px; text-align: left; border-radius: 14px; border: 1px solid var(--line); background: var(--surface2); color: var(--text); cursor: pointer; font: inherit; }
+.calm-option.on { border-color: var(--good); }
+.calm-option > svg { color: var(--good); flex: none; }
+.calm-option-emoji { flex: none; width: 32px; font-size: 24px; text-align: center; }
+.calm-option-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.calm-option-text strong { font-size: 16px; line-height: 1.25; }
+.calm-option-text small { color: var(--muted); font-size: 13px; }
+.calm-settings-link { margin-top: 4px; }
+
+.calm-breathe { display: grid; justify-items: center; gap: 12px; padding: 4px 0 8px; text-align: center; }
+.calm-breathe-stage { width: 200px; height: 200px; display: grid; place-items: center; }
+.calm-breathe-circle { width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--good) 55%, transparent) 0%, color-mix(in srgb, var(--good) 16%, transparent) 70%); border: 2px solid color-mix(in srgb, var(--good) 50%, transparent); transform: scale(0.55); animation: calm-breathe 10s ease-in-out 6; }
+@keyframes calm-breathe { 0% { transform: scale(0.55); } 40% { transform: scale(1); } 100% { transform: scale(0.55); } }
+.calm-breathe-word { font-size: 22px; font-weight: 700; margin: 0; }
+.calm-breathe-dots { display: flex; gap: 8px; justify-content: center; margin: 0; }
+.calm-breathe-dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--surface3); }
+.calm-breathe-dots i.done { background: var(--good); }
+.calm-breathe-dots i.now { background: color-mix(in srgb, var(--good) 50%, var(--surface3)); }
+.calm-breathe-steps { margin: 0; padding: 0 0 0 22px; display: grid; gap: 8px; text-align: left; width: 100%; }
+.calm-breathe-steps li { padding: 8px 10px; border-radius: 10px; border: 1px solid transparent; }
+.calm-breathe-steps li.now { background: var(--surface2); border-color: var(--good); }
+.calm-breathe .btn-row { justify-content: center; }
+
+.calm-settings-lead { margin: 0 0 14px; }
+fieldset.calm-set { min-width: 0; margin: 0 0 12px; }
+.calm-set-legend { float: left; width: 100%; padding: 0; margin: 0 0 4px; font-size: 17px; font-weight: 700; }
+.calm-set-hint { clear: both; margin: 0 0 8px; font-size: 14px; }
+.calm-seg { clear: both; display: flex; flex-wrap: wrap; gap: 6px; }
+.calm-seg-opt { position: relative; flex: 1 1 auto; min-height: 44px; display: grid; place-items: center; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface2); font-weight: 600; text-align: center; cursor: pointer; }
+.calm-seg-opt.on { background: var(--accent); border-color: transparent; color: #071026; }
+.calm-seg-opt input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.calm-switch { min-height: 44px; padding: 0; border-bottom: 0; }
+.calm-preview { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--bg2); border: 1px dashed var(--line); }
+.calm-preview p { margin: 0; }
+.calm-preview-chip { border: 1px solid var(--line); border-radius: 8px; padding: 1px 6px; }
+.calm-preview-swatch { display: inline-block; width: 40px; height: 12px; border-radius: 6px; vertical-align: middle; background: linear-gradient(90deg, var(--accent), var(--xp)); }
+html.calm-low-stim .calm-preview-swatch { background: var(--accent); }
+.calm-preview-timer { display: grid; gap: 4px; font-weight: 600; }
+.calm-preview-list { display: grid; gap: 4px; }
+.calm-preview-list li { padding: 6px 10px; border-radius: 10px; background: var(--surface2); }
+.calm-preview .small { margin: 6px 0 0; }
+/* Larger text: the Plan tab's chip groups wrap instead of running off the edge. */
+html.calm-zoom .plan-group .chips { flex-wrap: wrap; }
+/* Larger text on narrow phones: segmented controls and list rows wrap rather than scroll sideways, and grid cards
+   may shrink below their content's width. */
+html.calm-zoom .seg { flex-wrap: wrap; }
+html.calm-zoom .list li { flex-wrap: wrap; }
+html.calm-zoom .plan-days { grid-template-columns: minmax(0, 1fr); }
+html.calm-zoom .plan-day { min-width: 0; overflow-wrap: anywhere; }

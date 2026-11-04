@@ -8,6 +8,8 @@ import { fmtClock } from '@/family/timers'
 import { Icon } from '@/ui/icons'
 import { Ring, Sheet, buzz } from '@/ui/primitives'
 import { playChime, useWakeLock } from '@/ui/timers'
+import { useCalm } from '@/app/calm'
+import { DrainBar, untilLabel } from '@/ui/calmShell'
 
 /** Steps whose time has run out and that have already chimed on this phone (survives the screen re-mounting). */
 const CHIMED = new Set<string>()
@@ -26,6 +28,7 @@ export function RunScreen() {
   const run = id ? runOf(f, id) : undefined
   const v = run ? runView(run, now) : undefined
   const [steps, setSteps] = useState(false)
+  const calmView = useCalm().hideCountdowns
   useWakeLock(run?.status === 'running')
 
   // One gentle chime when the current step's time is up.
@@ -113,11 +116,20 @@ export function RunScreen() {
                 {cur.step.emoji ?? '▶️'}
               </span>
               <strong className="run-title">{cur.step.title}</strong>
-              <span className="run-clock">
-                {over ? '+' : ''}
-                {fmtClock(Math.abs(v.stepLeftSec))}
-              </span>
-              <span className="run-sub">{paused ? 'Paused' : over ? 'over the planned time' : `of ${fmtClock(v.stepPlannedSec)} left`}</span>
+              {calmView ? (
+                <>
+                  <span className="run-clock calm-clock">{paused ? 'Paused' : over ? 'take your time' : untilLabel(now + v.stepLeftSec * 1000)}</span>
+                  {!paused && !over && <DrainBar value={v.stepPlannedSec ? v.stepLeftSec / v.stepPlannedSec : 0} />}
+                </>
+              ) : (
+                <>
+                  <span className="run-clock">
+                    {over ? '+' : ''}
+                    {fmtClock(Math.abs(v.stepLeftSec))}
+                  </span>
+                  <span className="run-sub">{paused ? 'Paused' : over ? 'over the planned time' : `of ${fmtClock(v.stepPlannedSec)} left`}</span>
+                </>
+              )}
             </div>
           </Ring>
           {cur.step.notes && <p className="muted run-notes pre">{cur.step.notes}</p>}
