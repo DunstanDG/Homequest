@@ -63,6 +63,8 @@ export interface FreshOpts {
   /** Let long-untouched chores go to Someday (parents only: a child shouldn't take a grown-up's job off the list). */
   allowSomeday?: boolean
   somedayAfterDays?: number
+  /** Only these (e.g. homework, on the School screen). */
+  only?: (t: TaskEvent) => boolean
 }
 
 /** Should this one wait for Someday rather than come back onto a day? */
@@ -77,7 +79,9 @@ export function freshStartPlan(f: FamilyState, memberIds: readonly MemberId[], t
   const perDay = Math.max(1, o.perDay ?? FRESH_PER_DAY)
   const moves: FreshMove[] = []
   for (const m of memberIds) {
-    const items = leftOver(f, m, today).sort(order)
+    const items = leftOver(f, m, today)
+      .filter((t) => !o.only || o.only(t))
+      .sort(order)
     let slot = 0
     for (const t of items) {
       if (o.allowSomeday && canWaitForSomeday(t, today, now, o.somedayAfterDays)) {

@@ -4,7 +4,7 @@
  */
 import type { TaskRow } from './calendar'
 import { hmOf, toMin, ymdOf } from './dates'
-import type { DumpEvent, FamilyState, MemberId } from './types'
+import type { DumpEvent, FamilyState, Hm, MemberId } from './types'
 import type { PlanBlock } from './travel/types'
 
 /** A timed task counts as "now" from this long before its time until this long after. */
@@ -17,21 +17,36 @@ const open = (r: TaskRow): boolean => !r.done || r.done.status === 'rejected'
 
 /** Smaller is sooner: something timed and current first, then what's due soonest (anything from before counts as
  * due now), then what's planned for today, then this part of the day, then the rest. */
-function rank(r: TaskRow, now: number): number[] {
+function rank(r: TaskRow, now: number, planned: PlannedAt): number[] {
   const t = r.task
   const mins = toMin(hmOf(now))
   const today = ymdOf(now)
-  const timedNow = !!t.time && toMin(t.time) - mins <= NOW_BEFORE_MIN && mins - toMin(t.time) <= NOW_AFTER_MIN
+  const at = t.time ?? planned[t.taskId] ?? planned[t.title.trim().toLowerCase()]
+  const timedNow = !!at && toMin(at) - mins <= NOW_BEFORE_MIN && mins - toMin(at) <= NOW_AFTER_MIN
   const plannedToday = t.kind === 'homework' && !!t.doOn && t.doOn <= today
   const due = r.overdue || plannedToday || r.date === today ? 0 : r.dueIn !== undefined ? Math.max(0, r.dueIn) : 99
   const partStart = PART_START[t.part]
   const partNow = partStart === undefined ? 1 : partStart <= mins ? 0 : 2
-  return [timedNow ? 0 : 1, due, partNow, t.time ? toMin(t.time) : 24 * 60, t.minutes ?? 30]
+  return [timedNow ? 0 : 1, due, partNow, at ? toMin(at) : 24 * 60, t.minutes ?? 30]
 }
 
-/** The open rows in the order they'd be offered one at a time. Done rows are left out. */
-export function nextUpOrder(rows: readonly TaskRow[], now: number): TaskRow[] {
-  const keyed = rows.filter(open).map((r) => ({ r, k: rank(r, now) }))
+/** When the day plan has a task or homework down for (by task id, or by its title in lower case). */
+export type PlannedAt = Record<string, Hm>
+
+export function plannedAt(blocks: readonly PlanBlock[] | undefined): PlannedAt {
+  const out: PlannedAt = {}
+  for (const b of blocks ?? []) {
+    if (b.kind !== 'homework' && b.kind !== 'task') continue
+    if (b.ref) out[b.ref] = b.start
+    out[b.title.trim().toLowerCase()] = b.start
+  }
+  return out
+}
+
+/** The open rows in the order they'd be offered one at a time. Done rows are left out. `planned` (from the day
+ * plan) counts as a time for tasks that have none of their own. */
+export function nextUpOrder(rows: readonly TaskRow[], now: number, planned: PlannedAt = {}): TaskRow[] {
+  const keyed = rows.filter(open).map((r) => ({ r, k: rank(r, now, planned) }))
   keyed.sort((a, b) => {
     for (let i = 0; i < a.k.length; i++) if (a.k[i] !== b.k[i]) return a.k[i]! - b.k[i]!
     return a.r.task.title.localeCompare(b.r.task.title)

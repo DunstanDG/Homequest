@@ -392,7 +392,7 @@ function TaskInfo({ item, onClose }: { item: AgendaItem; onClose: () => void }) 
       <p className="muted">{[t.subject, t.teacher, t.minutes ? `${t.minutes} min` : '', t.coins ? `${t.coins} coins` : '', t.source?.startsWith('school:') ? 'set by school' : ''].filter(Boolean).join(' · ')}</p>
       {d?.status === 'pending' && <p className="pill tone-warn">Done, waiting for a parent to check</p>}
       {d?.status === 'approved' && <p className="pill tone-good">Done and checked</p>}
-      {d?.status === 'rejected' && <p className="pill tone-bad">Try again{d.checkNote ? `: ${d.checkNote}` : ''}</p>}
+      {d?.status === 'rejected' && <p className="pill tone-warn">Have another go{d.checkNote ? `: ${d.checkNote}` : ''}</p>}
       {canTick && !finished && (
         <button
           type="button"

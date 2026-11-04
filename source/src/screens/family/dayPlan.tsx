@@ -13,6 +13,7 @@ import { serverOn } from '@/family/travel/travel'
 import type { NudgeEvent, PlanBlock } from '@/family/travel/types'
 import type { Member } from '@/family/types'
 import { SectionHead } from '@/ui/fam'
+import { childWarning } from '@/family/calmToday'
 
 const SHOW = 5
 
@@ -128,6 +129,7 @@ export function DayPlanBlock({ view, now }: { view: Member; now: number }) {
   const { now: cur, next, past } = nowAndNext(rows, now)
   const shown = all ? rows : next.slice(0, SHOW)
   const mine = view.id === me.id
+  const grownUps = Object.values(f.members).filter((m) => m.active && m.role === 'parent').map((m) => m.name)
   return (
     <>
       <SectionHead
@@ -163,11 +165,22 @@ export function DayPlanBlock({ view, now }: { view: Member; now: number }) {
           ) : (
             !cur && <p className="muted">Nothing else planned today.</p>
           )}
-          {plan.warnings.slice(0, 2).map((w) => (
-            <p key={w} className="dp-warn small">
-              ⚠️ {w}
-            </p>
-          ))}
+          {me.role === 'parent'
+            ? plan.warnings.slice(0, 2).map((w) => (
+                <p key={w} className="dp-warn small">
+                  ⚠️ {w}
+                </p>
+              ))
+            : // Children never see clash or overload warnings; a tight gap is put calmly, and the grown-ups know.
+              plan.warnings
+                .map((w) => childWarning(w, grownUps))
+                .filter((w): w is string => !!w)
+                .slice(0, 1)
+                .map((w) => (
+                  <p key={w} className="muted small">
+                    {w}
+                  </p>
+                ))}
           {(rows.length > shown.length + (cur && !all ? 1 : 0) || all) && (
             <button type="button" className="link-btn" onClick={() => setAll((a) => !a)}>
               {all ? 'Show what’s next' : `Show the whole day${past ? ` (${past} done)` : ''}`}

@@ -5,7 +5,7 @@ import * as P from './planActions'
 import { makeCalCtx, tasksFor } from './calendar'
 import { addDays, tsOf } from './dates'
 import { dumpList } from './dump'
-import { childWarning, dumpForViewer, firstThen, nextUpOrder, pickNext, rowKey } from './calmToday'
+import { childWarning, dumpForViewer, firstThen, nextUpOrder, pickNext, plannedAt, rowKey } from './calmToday'
 import { applyFamilyEvent, projectFamily } from './project'
 import type { FamilyState } from './types'
 
@@ -52,6 +52,9 @@ describe('next up', () => {
     const ordered = nextUpOrder(rows, now)
     expect(pickNext(ordered, new Set([rowKey(ordered[0]!)]))!.task.taskId).toBe(order[1])
     expect(pickNext(ordered, new Set(ordered.map(rowKey)))).toBeUndefined()
+    // the day plan's time counts for a task with none of its own
+    const planned = plannedAt([{ start: '16:10', end: '16:40', kind: 'homework', title: 'Homework due Friday' }])
+    expect(nextUpOrder(rows, now, planned).slice(0, 2).map((r) => r.task.taskId)).toEqual(['timed', 'later'])
   })
 
   it('leaves done things out', () => {

@@ -13,6 +13,7 @@ import { Icon } from '@/ui/icons'
 import { cancelTaskReminder, Group, TaskLine, TaskSheet, upcomingWeekAnchor, usePeople } from './shared'
 import { DroppedList, UntickSheet } from './homeworkAdmin'
 import { HomeworkTimeCard, PlanAllButton } from './homeworkCards'
+import { FreshStartButton } from './calmParts'
 
 type Tab = 'now' | 'homework' | 'week' | 'clubs' | 'info'
 
@@ -114,6 +115,9 @@ export function School() {
     const dueIn = t.date ? daysBetween(today, t.date) : undefined
     return { task: t, date: t.date ?? 'any', overdue: dueIn !== undefined && dueIn < 0, dueIn, slipped: !!t.doOn && t.doOn < today && (dueIn ?? 0) >= 0 }
   })
+  // Left over from before first, as "Still to do" (never "late"); then everything ahead.
+  const hwBefore = hw.filter((r) => r.overdue)
+  const hwAhead = hw.filter((r) => !r.overdue)
   const allHw = Object.values(f.tasks).filter((t) => !t.deleted && !t.dropped && t.assignee === sel && t.kind === 'homework')
   const notAdded = pack.homework.filter((h) => !f.tasks[`hw-${pack.id}-${h.key}-${sel}`])
   const doneHw = allHw
@@ -248,7 +252,7 @@ export function School() {
             }
           />
           {nowHw.length === 0 ? (
-            <p className="note">No homework due.</p>
+            <p className="note">No homework right now. Enjoy the break.</p>
           ) : (
             <ul className="task-list">
               {nowHw.map((r) => (
@@ -258,7 +262,7 @@ export function School() {
                   canTick={canTick}
                   onToggle={() => toggle(r)}
                   onOpen={() => setEditTask({ task: r.task })}
-                  dateLabel={r.overdue || r.slipped ? undefined : r.task.doOn ? `do ${friendlyDay(r.task.doOn, today).toLowerCase()}` : 'not planned yet'}
+                  dateLabel={r.overdue || r.slipped ? undefined : r.task.doOn ? `doing it ${friendlyDay(r.task.doOn, today).toLowerCase()}` : 'pick a day?'}
                 />
               ))}
             </ul>
@@ -412,24 +416,32 @@ export function School() {
           {hw.length === 0 && (
             <div className="empty">
               <Icon name="book" size={30} />
-              <h3>No homework due</h3>
-              <p>Planned homework appears on the daily list on its planned day. Anything without a plan appears a week before it's due.</p>
+              <h3>Nothing to do right now</h3>
+              <p>Planned homework shows on the daily list on its day. Anything without a day shows a week before it's due.</p>
             </div>
           )}
           {canTick && (
             <div className="btn-row">
               <PlanAllButton child={member} />
+              <FreshStartButton memberIds={[member.id]} today={today} only={(t) => t.kind === 'homework'} className="btn small ghost" />
             </div>
           )}
+          {hwBefore.length > 0 && (
+            <Group title="Still to do">
+              {hwBefore.map((r) => (
+                <TaskLine key={`${r.task.taskId}|${r.date}`} row={r} canTick={canTick} onToggle={() => toggle(r)} onOpen={() => setEditTask({ task: r.task })} />
+              ))}
+            </Group>
+          )}
           <ul className="task-list">
-            {hw.map((r) => (
+            {hwAhead.map((r) => (
               <TaskLine
                 key={`${r.task.taskId}|${r.date}`}
                 row={r}
                 canTick={canTick}
                 onToggle={() => toggle(r)}
                 onOpen={() => setEditTask({ task: r.task })}
-                dateLabel={r.overdue || r.slipped ? undefined : r.task.doOn ? `do ${friendlyDay(r.task.doOn, today).toLowerCase()}` : 'not planned yet'}
+                dateLabel={r.overdue || r.slipped ? undefined : r.task.doOn ? `doing it ${friendlyDay(r.task.doOn, today).toLowerCase()}` : 'pick a day?'}
               />
             ))}
           </ul>
