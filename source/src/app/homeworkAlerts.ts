@@ -36,8 +36,9 @@ export async function resyncHomeworkAlerts(f: FamilyState, sync: SyncManager, se
       await scheduleNotification(sync, {
         memberId: m.id,
         fireAt,
-        title: m.id === child.id ? 'Homework due tomorrow' : `${child.name}: homework due tomorrow`,
-        body: `${what} isn't marked done yet.`,
+        title: m.id === child.id ? 'Homework for tomorrow' : `${child.name}: homework for tomorrow`,
+        body: m.id === child.id ? `${what} is still there whenever you're ready.` : `${what} is still waiting, if a gentle nudge would help.`,
+        label: what,
         tag,
       })
     }

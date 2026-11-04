@@ -6,7 +6,8 @@ import { parseBackup, makeBackup } from '@/storage/backup'
 import { notifyTypeOn, useApp, useFamily, useMe, useSyncStatus, type NotifyKind } from '@/app/context'
 import { ENV_SUPABASE_ANON_KEY, ENV_SUPABASE_URL, ENV_VAPID_PUBLIC_KEY } from '@/app/config'
 import { currentFamilyCode, eraseDevice, enableSharing } from '@/app/pairing'
-import { currentPushSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from '@/app/push'
+import { currentPushSubscription, isPushSupported, loadNotifyChoices, savePushPrefs, subscribeToPush, unsubscribeFromPush, type CalmNotifyChoices } from '@/app/push'
+import { CAP_CHOICES, DEFAULT_CAP_ADULT, DEFAULT_CAP_CHILD, DEFAULT_MORNING_AT } from '../../../supabase/functions/_shared/notifyPlan'
 import { Icon } from '@/ui/icons'
 import { Pill } from '@/ui/primitives'
 import { copyText, downloadText } from '@/ui/util'
@@ -81,7 +82,7 @@ function InviteFamilies() {
 const NOTIFY_TYPES: { id: NotifyKind; label: string }[] = [
   { id: 'meds', label: 'Next safe dose (medicine)' },
   { id: 'tasks', label: 'Tasks and chores due' },
-  { id: 'homework', label: 'Homework due tomorrow and not done (to the child and parents)' },
+  { id: 'homework', label: 'Homework coming up tomorrow (to the child and parents)' },
   { id: 'checkin', label: 'Morning and evening check-in reminders (if switched on for a person)' },
   { id: 'events', label: 'Calendar items coming up (events, lessons, clubs...)' },
   { id: 'sleep', label: 'Baby still asleep, worth checking in?' },
@@ -93,8 +94,14 @@ function NotificationsSection() {
   const me = useMe()
   const [subscribed, setSubscribed] = useState<boolean | null>(null)
   const [busy, setBusy] = useState(false)
+  const [choices, setChoices] = useState<CalmNotifyChoices>(loadNotifyChoices)
   const configured = !!currentFamilyCode(sync)
   const supported = isPushSupported()
+  const isChild = me?.role === 'child'
+  const changeChoices = (next: CalmNotifyChoices) => {
+    setChoices(next)
+    void savePushPrefs(sync, me?.role, next)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -126,7 +133,7 @@ function NotificationsSection() {
               onClick={async () => {
                 setBusy(true)
                 try {
-                  const res = await subscribeToPush(sync, me?.id ?? '', ENV_VAPID_PUBLIC_KEY ?? '')
+                  const res = await subscribeToPush(sync, me?.id ?? '', ENV_VAPID_PUBLIC_KEY ?? '', me?.role)
                   if (res.ok) {
                     setSubscribed(true)
                     toast('Notifications enabled on this device.')
@@ -180,6 +187,51 @@ function NotificationsSection() {
               />
             </label>
           ))}
+          <p className="note">How they arrive:</p>
+          <p className="muted">
+            Reminders that land close together come as one message. Medicine and baby feed reminders always come straight away, on their own.
+          </p>
+          <label className="switch-row">
+            <span className="sr-main">One summary in the morning instead of separate reminders</span>
+            <input
+              type="checkbox"
+              className="switch"
+              checked={!!choices.morning}
+              onChange={(e) => changeChoices({ ...choices, morning: e.target.checked })}
+            />
+          </label>
+          {choices.morning && (
+            <label className="field">
+              <span>Send it at</span>
+              <input
+                type="time"
+                value={choices.morningAt ?? DEFAULT_MORNING_AT}
+                onChange={(e) => changeChoices({ ...choices, morningAt: e.target.value || DEFAULT_MORNING_AT })}
+              />
+            </label>
+          )}
+          <label className="field">
+            <span>Most messages a day</span>
+            <select value={choices.cap ?? 0} onChange={(e) => changeChoices({ ...choices, cap: Number(e.target.value) || undefined })}>
+              <option value={0}>Usual ({isChild ? DEFAULT_CAP_CHILD : DEFAULT_CAP_ADULT})</option>
+              {CAP_CHOICES.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="muted">Anything over that waits, and is dropped if it is no longer useful. Medicine and baby reminders are never counted or held back.</p>
+          {me?.role === 'parent' && (
+            <>
+              <label className="switch-row">
+                <span className="sr-main">Repeat reminders for children</span>
+                <input type="checkbox" className="switch" checked={!!choices.repeatKids} onChange={(e) => changeChoices({ ...choices, repeatKids: e.target.checked })} />
+              </label>
+              <p className="muted">Off by default: a child hears about each thing once. Switch on to let them get a second nudge. This is for the whole family.</p>
+            </>
+          )}
+          <p className="muted">When someone pauses with “I’m overwhelmed”, their reminders wait until the pause ends, apart from medicine and baby ones.</p>
         </div>
       )}
     </section>

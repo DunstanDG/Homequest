@@ -97,7 +97,7 @@ export async function rescheduleTaskReminder(
   if (!notifyTypeOn(settings, 'tasks')) return cancelNotification(sync, tag)
   const fireAt = taskReminderAt(date, time)
   if (!fireAt) return cancelNotification(sync, tag)
-  await scheduleNotification(sync, { fireAt, title: 'Task due soon', body: taskTitle, tag })
+  await scheduleNotification(sync, { fireAt, title: 'Coming up', body: taskTitle, label: taskTitle, tag })
 }
 
 /** Cancel a task's pending reminder outright - it is done or gone, so there is nothing left to remind about. */

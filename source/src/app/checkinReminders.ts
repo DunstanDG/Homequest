@@ -35,6 +35,7 @@ export async function resyncCheckinReminders(f: FamilyState, sync: SyncManager, 
         fireAt,
         title: part === 'morning' ? 'Morning check-in' : 'Evening check-in',
         body: part === 'morning' ? 'A minute to look at the day ahead and start well.' : 'A minute to look back at the day and wind down.',
+        label: part === 'morning' ? 'Morning check-in' : 'Evening check-in',
         tag,
       })
     }

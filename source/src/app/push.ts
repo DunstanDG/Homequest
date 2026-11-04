@@ -6,7 +6,56 @@
  * Talks to the push_subscriptions table with plain fetch to PostgREST, same style as storage/supabase.ts - no
  * @supabase/supabase-js SDK.
  */
+import { DEFAULT_MORNING_AT, validTz, type NotifyPrefs } from '../../supabase/functions/_shared/notifyPlan'
 import type { SyncManager } from './syncManager'
+
+/** What this device's person chose about how notifications arrive. Device-local (like the other notification
+ * settings) and copied to push_subscriptions so the send function can follow it. See docs/calm/D-notify.md. */
+export interface CalmNotifyChoices {
+  /** One summary in the morning instead of separate reminders. */
+  morning?: boolean
+  morningAt?: string
+  /** Most messages a day, not counting urgent medicine and baby ones. Missing = the default (6 children, 10 adults). */
+  cap?: number
+  /** Parents only: let children get a second reminder about the same thing. Applies to the whole family. */
+  repeatKids?: boolean
+}
+
+const CHOICES_KEY = 'hq-notify-choices'
+
+export function loadNotifyChoices(): CalmNotifyChoices {
+  try {
+    const v = JSON.parse(localStorage.getItem(CHOICES_KEY) ?? '{}') as CalmNotifyChoices
+    return v && typeof v === 'object' ? v : {}
+  } catch {
+    return {}
+  }
+}
+
+export function saveNotifyChoices(c: CalmNotifyChoices): void {
+  try {
+    localStorage.setItem(CHOICES_KEY, JSON.stringify(c))
+  } catch {
+    /* private mode: the choice just isn't remembered on this device */
+  }
+}
+
+/** The per-device preferences the send function reads (push_subscriptions.prefs). */
+export function prefsFor(role: string | undefined, c: CalmNotifyChoices = loadNotifyChoices()): NotifyPrefs {
+  let tz = 'Europe/London'
+  try {
+    tz = validTz(Intl.DateTimeFormat().resolvedOptions().timeZone)
+  } catch {
+    /* keep the default */
+  }
+  const out: NotifyPrefs = { tz, child: role === 'child' }
+  if (c.morning) {
+    out.morning = true
+    out.morningAt = c.morningAt || DEFAULT_MORNING_AT
+  }
+  if (c.cap) out.cap = c.cap
+  return out
+}
 
 export const isPushSupported = (): boolean => typeof navigator !== 'undefined' && 'serviceWorker' in navigator && typeof window !== 'undefined' && 'PushManager' in window
 
@@ -27,7 +76,7 @@ export type SubscribeResult = { ok: true } | { ok: false; error: string }
  * ignore this otherwise), subscribes this device with the push service, and saves the subscription to the
  * family's push_subscriptions table.
  */
-export async function subscribeToPush(sync: SyncManager, memberId: string, vapidPublicKey: string): Promise<SubscribeResult> {
+export async function subscribeToPush(sync: SyncManager, memberId: string, vapidPublicKey: string, role?: string): Promise<SubscribeResult> {
   if (!isPushSupported()) return { ok: false, error: 'This browser does not support push notifications.' }
   const cfg = sync.config()
   const url = sync.effectiveUrl()
@@ -55,17 +104,21 @@ export async function subscribeToPush(sync: SyncManager, memberId: string, vapid
     const json = subscription.toJSON()
     if (!json.endpoint || !json.keys?.p256dh || !json.keys.auth) return { ok: false, error: 'The browser returned an incomplete push subscription.' }
 
-    const res = await fetch(`${url.replace(/\/+$/, '')}/rest/v1/push_subscriptions?on_conflict=family_key,endpoint`, {
-      method: 'POST',
-      headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${anonKey}`,
-        'x-family-key': cfg.familyKey,
-        'Content-Type': 'application/json',
-        Prefer: 'resolution=merge-duplicates,return=minimal',
-      },
-      body: JSON.stringify([{ family_key: cfg.familyKey, member_id: memberId, endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth }]),
-    })
+    const post = (extra: Record<string, unknown>) =>
+      fetch(`${url.replace(/\/+$/, '')}/rest/v1/push_subscriptions?on_conflict=family_key,endpoint`, {
+        method: 'POST',
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          'x-family-key': cfg.familyKey,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify([{ family_key: cfg.familyKey, member_id: memberId, endpoint: json.endpoint, p256dh: json.keys!.p256dh, auth: json.keys!.auth, ...extra }]),
+      })
+    // With the calm preferences; if the project hasn't had supabase/schema_v7.sql run yet there is no such column, so save without.
+    let res = await post({ prefs: prefsFor(role) })
+    if (res.status === 400) res = await post({})
     if (!res.ok) return { ok: false, error: `Could not save the subscription (${res.status}).` }
     return { ok: true }
   } catch (e) {
@@ -86,6 +139,15 @@ export interface ScheduledNotificationDraft {
   body: string
   /** Dedupe key, e.g. `med:<babyId>:<ruleName>` - a later call with the same tag should replace, not duplicate. */
   tag: string
+  /** Short wording for when this is bundled with others into one message ("Piano at 16:15"). Defaults to the body. */
+  label?: string
+}
+
+/** Insert rows with the optional `label` column; if the project hasn't had schema_v7.sql run yet, retry without it. */
+async function insertRows(base: string, headers: Record<string, string>, rows: Record<string, unknown>[]): Promise<void> {
+  const post = (r: Record<string, unknown>[]) => fetch(base, { method: 'POST', headers: { ...headers, Prefer: 'return=minimal' }, body: JSON.stringify(r) })
+  const res = await post(rows).catch(() => undefined)
+  if (res && res.status === 400 && rows.some((r) => r.label !== undefined)) await post(rows.map(({ label: _l, ...r }) => r)).catch(() => {})
 }
 
 /**
@@ -105,11 +167,7 @@ export async function scheduleNotification(sync: SyncManager, draft: ScheduledNo
     method: 'DELETE',
     headers,
   }).catch(() => {})
-  await fetch(base, {
-    method: 'POST',
-    headers: { ...headers, Prefer: 'return=minimal' },
-    body: JSON.stringify([{ family_key: cfg.familyKey, member_id: draft.memberId ?? null, fire_at: new Date(draft.fireAt).toISOString(), title: draft.title, body: draft.body, tag: draft.tag }]),
-  }).catch(() => {})
+  await insertRows(base, headers, [{ family_key: cfg.familyKey, member_id: draft.memberId ?? null, fire_at: new Date(draft.fireAt).toISOString(), title: draft.title, body: draft.body, tag: draft.tag, label: draft.label }])
 }
 
 /**
@@ -163,13 +221,11 @@ export async function scheduleNotificationFor(sync: SyncManager, memberIds: read
   const url = sync.effectiveUrl()
   const anonKey = sync.effectiveAnonKey()
   if (!cfg?.familyKey || !url || !anonKey || !memberIds.length) return
-  await fetch(`${url.replace(/\/+$/, '')}/rest/v1/scheduled_notifications`, {
-    method: 'POST',
-    headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'x-family-key': cfg.familyKey, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-    body: JSON.stringify(
-      memberIds.map((m) => ({ family_key: cfg.familyKey, member_id: m, fire_at: new Date(draft.fireAt).toISOString(), title: draft.title, body: draft.body, tag: `${draft.tag}:${m}` })),
-    ),
-  }).catch(() => {})
+  await insertRows(
+    `${url.replace(/\/+$/, '')}/rest/v1/scheduled_notifications`,
+    { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'x-family-key': cfg.familyKey, 'Content-Type': 'application/json' },
+    memberIds.map((m) => ({ family_key: cfg.familyKey, member_id: m, fire_at: new Date(draft.fireAt).toISOString(), title: draft.title, body: draft.body, tag: `${draft.tag}:${m}`, label: draft.label })),
+  )
 }
 
 /** Cancel every copy of a reminder queued with `scheduleNotificationFor` (and any older untargeted one). */
@@ -200,4 +256,25 @@ export async function unsubscribeFromPush(sync: SyncManager): Promise<void> {
     method: 'DELETE',
     headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'x-family-key': cfg.familyKey },
   }).catch(() => {})
+}
+
+/**
+ * Save the current calm choices to this device's subscription row (and, for a parent, the family-wide "repeat
+ * reminders for children" switch to every device in the family). Quietly does nothing if there is no subscription
+ * or the project hasn't had supabase/schema_v7.sql run yet.
+ */
+export async function savePushPrefs(sync: SyncManager, role: string | undefined, choices: CalmNotifyChoices): Promise<boolean> {
+  saveNotifyChoices(choices)
+  const sub = await currentPushSubscription()
+  const cfg = sync.config()
+  const url = sync.effectiveUrl()
+  const anonKey = sync.effectiveAnonKey()
+  if (!sub || !cfg?.familyKey || !url || !anonKey) return false
+  const headers = { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'x-family-key': cfg.familyKey, 'Content-Type': 'application/json', Prefer: 'return=minimal' }
+  const base = `${url.replace(/\/+$/, '')}/rest/v1/push_subscriptions`
+  const mine = await fetch(`${base}?family_key=eq.${encodeURIComponent(cfg.familyKey)}&endpoint=eq.${encodeURIComponent(sub.endpoint)}`, { method: 'PATCH', headers, body: JSON.stringify({ prefs: prefsFor(role, choices) }) }).catch(() => undefined)
+  if (role === 'parent') {
+    await fetch(`${base}?family_key=eq.${encodeURIComponent(cfg.familyKey)}`, { method: 'PATCH', headers, body: JSON.stringify({ repeat_kids: !!choices.repeatKids }) }).catch(() => {})
+  }
+  return !!mine?.ok
 }
