@@ -130,6 +130,40 @@ The Round table screen shows the agenda, the suggested changes, the things raise
 Parents can go on to the weekly summit from there. On the server: `homeserver-plan roundtable` shows it and
 `homeserver-plan roundtable start` starts one now (for next week).
 
+### Round table with Gemini (0.17)
+
+Parents can choose who writes the agenda: Round table → *When it happens and who writes it* → **Who writes the
+agenda**: 🏠 Home assistant (as above) or ✨ Gemini. It is a family setting (`round-table-settings.engine`).
+
+With Gemini the home server still works out the facts and writes the round table as `waiting`. Then the `round-table`
+Edge Function (`supabase/functions/round-table/`) reads the facts and the things raised, sends them to Gemini with
+every family member's name swapped for "Person 1", "Person 2"…, checks the answer, puts the names back and writes the
+round table as `ready` with `source: 'gemini'`. It takes seconds. Gemini writes the summary and agenda points only;
+it doesn't make "suggested changes" to Add (those need the home assistant's tools), so its ideas are in the points.
+
+It starts either way:
+
+- **By itself** (`supabase/schema_v6.sql`): a database trigger calls the function the moment the `waiting` row lands.
+- **From the app**: on the Round table screen, a parent's phone asks after two minutes of waiting, and there is an
+  *Ask Gemini now* button.
+
+Setting it up (once):
+
+1. Secrets, alongside the breakdown function's `GEMINI_API_KEY` and `ALLOWED_FAMILY_KEYS` (the family must be in
+   that list): `supabase secrets set SERVICE_ROLE_KEY=<service_role key> ROUND_TABLE_HOOK_SECRET=<long random string>`.
+2. Deploy: `supabase functions deploy round-table` (it bundles `_shared/`), then turn **off** "Verify JWT" in the
+   function's details, as for breakdown.
+3. Put the same random string and the function's URL in the vault and run `supabase/schema_v6.sql` (instructions at
+   the top of the file).
+4. In the app, switch the round table to Gemini.
+
+**Home server note.** The bridge on the Hermes container doesn't know about this setting yet. Gemini normally
+finishes long before the bridge's 5-minute check, and a round table that is already `ready` isn't picked up. But
+if the bridge does catch it while it is still `waiting`, the assistant posts too, and the later post wins. To rule
+that out, the bridge (and the home server's 45-minute fallback) should skip a round table when the family's latest
+`round-table-settings` event has `engine: 'gemini'`. That change belongs in the home server's code, which isn't in
+this repository.
+
 ## Buses (0.15)
 
 The family's own **OpenTripPlanner** (OTP 2.9) runs in its own container on the home server (CT 104, `otp`,

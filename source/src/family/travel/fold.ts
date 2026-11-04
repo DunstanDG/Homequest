@@ -204,7 +204,7 @@ export function applyTravelEvent(prev: TravelState, ev: AppEvent & TravelEvent):
             proposals: strs(a.proposals, 8, 80),
           }
         : undefined
-      const source = ev.source === 'assistant' || ev.source === 'server' ? ev.source : undefined
+      const source = ev.source === 'assistant' || ev.source === 'server' || ev.source === 'gemini' ? ev.source : undefined
       return { ...prev, roundTables: { ...prev.roundTables, [ev.weekOf]: { ...ev, facts: cleanFacts(ev.facts, ev.weekOf), agenda, source, notes: num(ev.notes, 0, 1000) } } }
     }
     case 'round-table-note': {
@@ -215,7 +215,7 @@ export function applyTravelEvent(prev: TravelState, ev: AppEvent & TravelEvent):
     case 'round-table-settings': {
       if (prev.rtSettings && prev.rtSettings.ts > ev.ts) return prev
       const weekday = num(ev.weekday, 0, 6) ?? 6
-      return { ...prev, rtSettings: { ...ev, on: ev.on !== false, weekday, at: hm(ev.at) ?? '17:00' } }
+      return { ...prev, rtSettings: { ...ev, on: ev.on !== false, weekday, at: hm(ev.at) ?? '17:00', engine: ev.engine === 'gemini' ? 'gemini' : 'local' } }
     }
     case 'server-ping':
       return { ...prev, pings: { ...prev.pings, [ev.pingId]: { ...prev.pings[ev.pingId], sentTs: ev.ts } } }

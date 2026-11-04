@@ -3,15 +3,16 @@
  * and posts a short agenda with suggested fixes, and the family talks it over (parents can then go through the
  * weekly summit). See src/family/travel/roundTable.ts and the home server's weekly.py.
  */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useApp, useFamily, useMe, useNow } from '@/app/context'
+import { useApp, useFamily, useMe, useNow, useSyncStatus } from '@/app/context'
+import { askGeminiForRoundTable } from '@/app/roundTableGemini'
 import { hmOf, ymdOf } from '@/family/dates'
 import * as T from '@/family/travel/actions'
 import { currentRoundTable, notesFor, phaseOf, reviewLine, rtSettingsOf, scheduleFor, whenText, WEEKDAYS } from '@/family/travel/roundTable'
 import { serverOn } from '@/family/travel/travel'
 import type { RoundTableEvent } from '@/family/travel/types'
-import { SectionHead } from '@/ui/fam'
+import { SectionHead, Seg } from '@/ui/fam'
 import { Icon } from '@/ui/icons'
 import { ProposalCard } from './Assistant'
 
@@ -32,7 +33,9 @@ function Agenda({ rt }: { rt: RoundTableEvent }) {
             ))}
           </ol>
         )}
-        <small className="muted">{rt.source === 'server' ? 'Put together by the home server (the assistant wasn’t available).' : 'From the family assistant.'}</small>
+        <small className="muted">
+          {rt.source === 'server' ? 'Put together by the home server (the assistant wasn’t available).' : rt.source === 'gemini' ? 'Written by Gemini from the home server’s plan for the week.' : 'From the family assistant.'}
+        </small>
       </div>
       {props.length > 0 && (
         <>
@@ -153,9 +156,10 @@ function Settings() {
   const [on, setOn] = useState(s.on)
   const [day, setDay] = useState(s.weekday)
   const [at, setAt] = useState(s.at)
+  const [engine, setEngine] = useState(s.engine)
   return (
     <details className="card rt-settings">
-      <summary>When the round table happens</summary>
+      <summary>When it happens and who writes it</summary>
       <label className="switch-row">
         <span className="sr-main">
           <strong>Weekly round table</strong>
@@ -163,6 +167,23 @@ function Settings() {
         </span>
         <input type="checkbox" className="switch" checked={on} onChange={(e) => setOn(e.target.checked)} />
       </label>
+      <div className="field">
+        <span>Who writes the agenda</span>
+        <Seg<'local' | 'gemini'>
+          label="Who writes the agenda"
+          value={engine}
+          onChange={setEngine}
+          options={[
+            { id: 'local', label: '🏠 Home assistant' },
+            { id: 'gemini', label: '✨ Gemini' },
+          ]}
+        />
+      </div>
+      <small className="muted rt-engine-note">
+        {engine === 'gemini'
+          ? 'The home server still works out the week; Gemini (Google) writes the agenda in seconds. It is sent the week’s events, warnings and the things raised, with everyone’s names swapped for “Person 1”, “Person 2”. It needs the round-table function in the family’s Supabase project. Gemini doesn’t make suggested changes you can Add; its ideas are in the agenda.'
+          : 'The family assistant on the home server writes the agenda and can suggest changes to Add. Nothing leaves home.'}
+      </small>
       <div className="grid2">
         <label className="field">
           <span>Day</span>
@@ -179,10 +200,47 @@ function Settings() {
           <input type="time" className="tbox" value={at} onChange={(e) => setAt(e.target.value)} />
         </label>
       </div>
-      <button type="button" className="btn primary small" onClick={() => (act(T.saveRoundTableSettings(me.id, { on, weekday: day, at: /^\d\d:\d\d$/.test(at) ? at : s.at })), toast('Saved.'))}>
+      <button type="button" className="btn primary small" onClick={() => (act(T.saveRoundTableSettings(me.id, { on, weekday: day, at: /^\d\d:\d\d$/.test(at) ? at : s.at, engine })), toast('Saved.'))}>
         Save
       </button>
     </details>
+  )
+}
+
+/** Waiting with Gemini chosen: normally done within a minute by the database trigger; a parent can also ask now. */
+function GeminiWaiting({ rt }: { rt: RoundTableEvent }) {
+  const me = useMe()!
+  const { demo } = useApp()
+  const sync = useSyncStatus()
+  const now = useNow(15_000)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string>()
+  const tried = useRef(false)
+  const ask = async () => {
+    setBusy(true)
+    setMsg(undefined)
+    const r = await askGeminiForRoundTable(sync, rt.weekOf)
+    setBusy(false)
+    setMsg(r.ok ? (r.already ? 'It’s already been written: it will appear in a moment.' : 'Done: the agenda will appear in a moment.') : r.error)
+  }
+  // If it's been waiting a couple of minutes (the trigger isn't set up, or failed), a parent's phone asks once by itself.
+  const stale = now - rt.ts > 2 * 60_000
+  useEffect(() => {
+    if (stale && me.role === 'parent' && !demo && !tried.current) {
+      tried.current = true
+      void ask()
+    }
+  }, [stale])
+  return (
+    <div className="note">
+      <p>⏳ Gemini is writing the agenda from the home server’s plan for the week. It usually takes under a minute.</p>
+      {me.role === 'parent' && (
+        <button type="button" className="btn small" disabled={busy || demo} onClick={() => void ask()}>
+          <Icon name="sparkle" size={16} /> {busy ? 'Asking Gemini…' : 'Ask Gemini now'}
+        </button>
+      )}
+      {msg && <p className="small">{msg}</p>}
+    </div>
   )
 }
 
@@ -218,7 +276,7 @@ export function RoundTable() {
               Next round table: <strong>{whenText(s)}</strong>. The assistant goes through the week, suggests fixes and lets everyone know when it’s ready.
             </p>
           )}
-          {rt?.status === 'waiting' && <p className="note">⏳ The assistant is going through the week now. It takes a few minutes; everyone gets a notification when it’s ready.</p>}
+          {rt?.status === 'waiting' && (s.engine === 'gemini' ? <GeminiWaiting rt={rt} /> : <p className="note">⏳ The assistant is going through the week now. It takes a few minutes; everyone gets a notification when it’s ready.</p>)}
           {rt?.status === 'ready' && rt.agenda && <Agenda rt={rt} />}
           <Raise weekOf={notesWeek} />
           {rt && <Week rt={rt} />}

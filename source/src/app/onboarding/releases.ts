@@ -45,6 +45,17 @@ export const AREA_LABEL: Record<Area, { label: string; emoji: string }> = {
 export const RELEASES: ReleaseNote[] = [
   // ---------------------------------------------------------------- 4 November 2026 (0.17)
   {
+    id: '2026-11-04-round-table-gemini',
+    date: '2026-11-04',
+    audience: 'parent',
+    area: 'plan',
+    emoji: '✨',
+    title: 'Round table agenda by Gemini, if you prefer',
+    short: 'Gemini round table',
+    body: 'The weekly round table can now be written by Gemini instead of the home assistant: Round table › When it happens and who writes it. It takes seconds, and names are never sent.',
+    to: '/round-table',
+  },
+  {
     id: '2026-11-04-shared-server',
     date: '2026-11-04',
     audience: 'parent',

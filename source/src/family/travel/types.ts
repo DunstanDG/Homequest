@@ -332,7 +332,7 @@ export interface RoundTableEvent extends EventBase {
   facts: RoundTableFacts
   notes?: number
   startedAt?: number
-  source?: 'assistant' | 'server'
+  source?: 'assistant' | 'server' | 'gemini'
   agenda?: { summary: string; points: { text: string }[]; proposals: string[] }
 }
 
@@ -351,6 +351,8 @@ export interface RoundTableSettingsEvent extends EventBase {
   on: boolean
   weekday: number
   at: Hm
+  /** Who writes the agenda: the family assistant on the home server (default) or Gemini (supabase/functions/round-table). */
+  engine?: 'local' | 'gemini'
 }
 
 export type TravelEvent =

@@ -17,11 +17,13 @@ export interface RoundTableSettings {
   /** 0 = Monday ... 6 = Sunday */
   weekday: number
   at: Hm
+  /** Who writes the agenda: the family assistant on the home server, or Gemini. */
+  engine: 'local' | 'gemini'
 }
 
 export function rtSettingsOf(f: FamilyState): RoundTableSettings {
   const s = f.travel.rtSettings
-  return { on: s?.on !== false, weekday: s?.weekday ?? 6, at: s?.at ?? '17:00' }
+  return { on: s?.on !== false, weekday: s?.weekday ?? 6, at: s?.at ?? '17:00', engine: s?.engine === 'gemini' ? 'gemini' : 'local' }
 }
 
 const monIndex = weekday // 0 = Monday

@@ -31,7 +31,7 @@ const rt = (status: string, ts: number, extra: Record<string, unknown> = {}) => 
 describe('round table', () => {
   it('runs on Sunday at 17:00 for the next week by default, notes asked the day before', () => {
     const s = rtSettingsOf(family())
-    expect(s).toEqual({ on: true, weekday: 6, at: '17:00' })
+    expect(s).toEqual({ on: true, weekday: 6, at: '17:00', engine: 'local' })
     expect(scheduleFor('2026-10-29', s)).toEqual({ run: '2026-11-01', notesFrom: '2026-10-31', weekOf: '2026-11-02' })
     expect(scheduleFor('2026-11-01', s).weekOf).toBe('2026-11-02')
     expect(scheduleFor('2026-11-01', { ...s, weekday: 4 })).toEqual({ run: '2026-10-30', notesFrom: '2026-10-29', weekOf: '2026-11-02' })

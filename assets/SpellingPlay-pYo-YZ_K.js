@@ -1,4 +1,4 @@
-import{n as e}from"./rolldown-runtime-CbXtAM7H.js";import{_ as t,f as n,t as r,x as i}from"./vendor-DYgNoWim.js";import{_ as a,d as o,m as s,o as c,s as l,t as u}from"./primitives-DfDApDGr.js";import{Gt as d,It as f,Kt as p,Rt as m,Ut as h,Wt as g}from"./project-B_KHl9Mw.js";import{c as _,l as v,s as y}from"./content-C8AYg1DY.js";var b=e(i(),1),x=`Key Stage 3 (Year 8 Benchmark Words)
+import{n as e}from"./rolldown-runtime-CbXtAM7H.js";import{_ as t,f as n,t as r,x as i}from"./vendor-DYgNoWim.js";import{_ as a,d as o,m as s,o as c,s as l,t as u}from"./primitives-D6l1rFqn.js";import{Gt as d,It as f,Kt as p,Rt as m,Ut as h,Wt as g}from"./project-zAnmtfkF.js";import{c as _,l as v,s as y}from"./content-C8AYg1DY.js";var b=e(i(),1),x=`Key Stage 3 (Year 8 Benchmark Words)
 Double Consonants & Tricky Vowels
 | Word (Ltrs) | POS | Phonetic | Game Clue / Definition | Suggested Backronym |
 |---|---|---|---|---|
