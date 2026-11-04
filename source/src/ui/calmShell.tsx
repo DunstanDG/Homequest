@@ -122,7 +122,8 @@ export function CalmShell({ tabs }: { tabs: boolean }) {
 /** "🌿 Calm": the last item of the tab bar (shown first), or a small corner button on full-screen pages. */
 function CalmButton({ tabs }: { tabs: boolean }) {
   const { pathname } = useLocation()
-  const [bar, setBar] = useState<Element | null>(null)
+  // undefined: not looked yet. null: no tab bar found (if the tab bar is ever renamed, float above it instead).
+  const [bar, setBar] = useState<Element | null | undefined>(undefined)
   useEffect(() => setBar(tabs ? document.querySelector('nav.tabbar') : null), [tabs, pathname])
   useEffect(() => {
     // Leave room under the corner button so it never sits on the end of a page.
@@ -130,7 +131,7 @@ function CalmButton({ tabs }: { tabs: boolean }) {
     document.documentElement.classList.toggle('calm-corner-on', corner)
     return () => document.documentElement.classList.remove('calm-corner-on')
   }, [tabs, pathname])
-  const btn = (where: 'bar' | 'corner') => (
+  const btn = (where: 'bar' | 'corner' | 'corner lifted') => (
     <button type="button" className={`calm-pill calm-ui ${where}`} onClick={openCalmSheet} aria-haspopup="dialog" aria-label="Calm: a breather, or a quieter day">
       <span className="calm-pill-emoji" aria-hidden="true">
         🌿
@@ -138,13 +139,18 @@ function CalmButton({ tabs }: { tabs: boolean }) {
       {where === 'bar' && <span className="calm-pill-label">Calm</span>}
     </button>
   )
-  if (tabs) return bar ? createPortal(btn('bar'), bar) : null
+  if (tabs) return bar ? createPortal(btn('bar'), bar) : bar === null ? btn('corner lifted') : null
   if (NO_CORNER.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null
   return btn('corner')
 }
 
 const firstName = (m: Member | undefined) => m?.name ?? 'Someone'
 const joinNames = (names: string[]): string => (names.length <= 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`)
+/** "Today shows one thing and questions and reminders are waiting." */
+const statusLine = (parts: string[]): string => {
+  const t = joinNames(parts.filter(Boolean))
+  return t ? `${t.charAt(0).toUpperCase()}${t.slice(1)}.` : ''
+}
 const grownUps = (f: FamilyState, me: MemberId): Member[] => Object.values(f.members).filter((m) => m.active && m.role === 'parent' && m.id !== me)
 
 /** The gentle banners at the top of every page. A polite live region, so screen readers mention them without interrupting. */
@@ -282,10 +288,7 @@ function CalmMenu({ onBreathe, onClose }: { onBreathe(): void; onClose(): void }
       {anything && (
         <div className="calm-status">
           <strong>Calm mode is on until the end of today</strong>
-          <small className="muted">
-            {[calm.paused ? 'Today shows one thing' : '', synced ? 'questions and reminders are waiting' : '', synced?.askHelp ? `${names || 'the family'} can see you asked for help` : ''].filter(Boolean).join(', ')}
-            .
-          </small>
+          <small className="muted">{statusLine([calm.paused ? 'Today shows one thing' : '', synced ? 'questions and reminders are waiting' : '', synced?.askHelp ? `${names || 'the family'} can see you asked for help` : ''])}</small>
         </div>
       )}
       <div className="calm-options">
