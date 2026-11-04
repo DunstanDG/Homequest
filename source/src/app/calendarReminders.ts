@@ -38,7 +38,8 @@ export async function resyncCalendarReminders(ctx: CalCtx, sync: SyncManager, se
       if (item.source === 'travel') continue
       const fireAt = eventReminderAt(item.date, item.start, item.allDay, now)
       if (!fireAt) continue
-      await scheduleNotification(sync, { fireAt, title: 'Coming up', body: item.title, tag: eventReminderTag(item.key) })
+      const what = item.start ? `${item.title} at ${item.start}` : item.title
+      await scheduleNotification(sync, { fireAt, title: 'Coming up', body: what, label: what, tag: eventReminderTag(item.key) })
     }
   }
 }
