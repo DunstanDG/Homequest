@@ -40,6 +40,8 @@ import { useAppNightMode } from './night'
 import { ensureOnboard, useOnboard } from './onboarding/store'
 import { useQuietUpdate } from './update'
 import { ALL_NOTE_IDS, Welcome } from '@/screens/onboarding/Onboarding'
+import { CalmShell } from '@/ui/calmShell'
+import { CalmSettings } from '@/screens/settings/CalmSettings'
 
 function Shell({ newPerson }: { newPerson: boolean }) {
   const { pathname } = useLocation()
@@ -73,6 +75,7 @@ function Shell({ newPerson }: { newPerson: boolean }) {
   return (
     <>
       <RingingBanner />
+      <CalmShell tabs={!hideTabs} />
       <div className={`app-body${hideTabs ? ' no-tabs' : ''}${showAdd ? ' has-fab' : ''}`}>
         <ErrorBoundary resetKey={pathname}>
           <Routes>
@@ -106,6 +109,7 @@ function Shell({ newPerson }: { newPerson: boolean }) {
             <Route path="/play/:gameId" element={<LearnPlay />} />
             <Route path="/parent" element={<Parent />} />
             <Route path="/more" element={<More />} />
+            <Route path="/settings/calm" element={<CalmSettings />} />
             {import.meta.env.DEV && <Route path="/dev" element={<Gallery />} />}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

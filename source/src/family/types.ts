@@ -1018,6 +1018,7 @@ export type FamilyEvent =
   | CommentEvent
   | SummitEvent
   | DumpPromptSettingEvent
+  | CalmPauseEvent
   | TriviaDoneEvent
   | CoinGoalEvent
   | CoinGoalGiftEvent
@@ -1060,6 +1061,19 @@ export interface DumpPromptSettingEvent extends EventBase {
   enabled: boolean
   time: Hm
   lastSeen?: Ymd
+}
+
+/** "I'm overwhelmed" (see family/calmPause.ts): this person has paused questions and reminders until `until` (ms).
+ * Latest per member wins; `until <= now` means not paused ("Back to normal" writes `until: now`). The notification
+ * server holds back pushes while it's on. `askHelp` asks a grown-up (or the family) for a calm moment and some help;
+ * a parent's "I'm on it" re-writes it with `askHelp: false` and `helper` set. */
+export interface CalmPauseEvent extends EventBase {
+  type: 'calm-pause'
+  memberId: MemberId
+  until: number
+  askHelp?: boolean
+  /** Who said "I'm on it". */
+  helper?: MemberId
 }
 
 /** Marks today's daily trivia card done for a member, so it only ever pays out once a day. Upsert by `${memberId}|${date}`. */
@@ -1381,6 +1395,8 @@ export interface FamilyState {
   comments: Record<string, CommentEvent>
   summits: Record<string, SummitEvent>
   dumpPromptSettings: Record<MemberId, DumpPromptSettingEvent>
+  /** memberId -> their latest "I'm overwhelmed" pause (calm-pause). Latest wins. */
+  calmPauses: Record<MemberId, CalmPauseEvent>
   triviaDone: Record<string, TriviaDoneEvent>
   goals: Record<string, CoinGoalEvent>
   goalGifts: CoinGoalGiftEvent[]

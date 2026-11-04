@@ -5,6 +5,9 @@ import * as A from '@/family/actions'
 import { elapsedMs, elapsedSec, fmtClock, remainingSec, totalSec } from '@/family/timers'
 import type { MemberId, TimerState } from '@/family/types'
 import { useApp, useFamily, useMe, useNow } from '@/app/context'
+import { useCalm } from '@/app/calm'
+import { hmOf } from '@/family/dates'
+import { DrainBar, untilLabel } from './calmShell'
 import { cancelNotificationFor } from '@/app/push'
 import { sleepReminderTag } from '@/family/notify'
 import { Avatar } from './fam'
@@ -177,6 +180,22 @@ export function StartTimerSheet({
   )
 }
 
+/** "Hide ticking countdowns" (calm settings): what a timer's clock says instead of ticking seconds. */
+function calmClock(t: TimerState, now: number): string {
+  const left = remainingSec(t, now)
+  if (left === undefined) return t.status === 'running' ? `since ${hmOf(now - elapsedMs(t, now))}` : `${Math.floor(elapsedSec(t, now) / 60)} min so far`
+  if (left <= 0) return "time's up"
+  if (t.status !== 'running') return `${Math.ceil(left / 60)} min left`
+  return untilLabel(now + totalSec(t) * 1000 - elapsedMs(t, now))
+}
+
+/** How full the calm draining bar is (1 = all the time still to go). */
+const drainLeft = (t: TimerState, now: number): number => {
+  const total = totalSec(t)
+  const left = remainingSec(t, now)
+  return total && left !== undefined ? left / total : 0
+}
+
 /** Compact running-timer row for the Today screen and the trackers. Tap to open the full-screen timer.
  * A running sleep timer also gets a play/mute control for looped white noise (see `ui/whiteNoise.ts`) — off by
  * default, since a parent may be in the room and not want it, or may specifically want it as a settling aid. Web
@@ -189,6 +208,7 @@ export function MiniTimer({ timer }: { timer: TimerState }) {
   const left = remainingSec(timer, now)
   const over = left !== undefined && left <= 0
   const shown = left === undefined ? elapsedSec(timer, now) : Math.abs(left)
+  const calmView = useCalm().hideCountdowns
   const noiseAvailable = timer.purpose === 'sleep' && timer.status === 'running'
   const [noiseOn, setNoiseOn] = useState(false)
   const noiseRef = useRef<WhiteNoiseHandle | undefined>(undefined)
@@ -221,11 +241,16 @@ export function MiniTimer({ timer }: { timer: TimerState }) {
         <span className="mt-main">
           <strong>{timer.label}</strong>
           <small>{timer.status === 'paused' ? 'Paused' : over ? 'Time is up' : left === undefined ? 'Counting up' : 'Time left'}</small>
+          {calmView && left !== undefined && !over && <DrainBar value={drainLeft(timer, now)} />}
         </span>
-        <span className="mt-clock">
-          {over ? '+' : ''}
-          {fmtClock(shown)}
-        </span>
+        {calmView ? (
+          <span className="mt-clock calm-clock">{calmClock(timer, now)}</span>
+        ) : (
+          <span className="mt-clock">
+            {over ? '+' : ''}
+            {fmtClock(shown)}
+          </span>
+        )}
       </button>
       {noiseAvailable && (
         <button type="button" className="icon-btn small" aria-label={noiseOn ? 'Mute white noise' : 'Play white noise'} onClick={toggleNoise}>
@@ -247,6 +272,7 @@ export function TimerScreen() {
   const f = useFamily()
   const me = useMe()
   const now = useNow(1000)
+  const calmView = useCalm().hideCountdowns
   const t = id ? f.timers[id] : undefined
   useTimerAlarm(t, now)
   useWakeLock(t?.status === 'running')
@@ -297,11 +323,19 @@ export function TimerScreen() {
       <div className="timer-body">
         <Ring value={ended ? 1 : progress} size={280} stroke={16} tone={over ? 'good' : 'accent'}>
           <div className="timer-face">
-            <div className="timer-clock">
-              {over ? '+' : ''}
-              {fmtClock(shown)}
-            </div>
-            <div className="timer-sub">{ended ? (t.status === 'done' ? 'Finished' : 'Cancelled') : t.status === 'paused' ? 'Paused' : over ? "Time's up" : left === undefined ? 'elapsed' : `of ${fmtClock(total)}`}</div>
+            {calmView ? (
+              <div className="timer-clock calm-clock">{calmClock(t, now)}</div>
+            ) : (
+              <div className="timer-clock">
+                {over ? '+' : ''}
+                {fmtClock(shown)}
+              </div>
+            )}
+            {calmView && !ended && left !== undefined && !over ? (
+              <DrainBar value={drainLeft(t, now)} />
+            ) : (
+              <div className="timer-sub">{ended ? (t.status === 'done' ? 'Finished' : 'Cancelled') : t.status === 'paused' ? 'Paused' : over ? "Time's up" : left === undefined ? 'elapsed' : calmView ? `${Math.round(total / 60)} minutes in all` : `of ${fmtClock(total)}`}</div>
+            )}
           </div>
         </Ring>
         {task && (
