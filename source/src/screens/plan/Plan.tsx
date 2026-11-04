@@ -62,6 +62,9 @@ export function Plan() {
           <h1>Get things done</h1>
         </div>
         <div className="head-actions">
+          <Link to="/plan/new-thing" className="btn small ghost" aria-label="Plan a thing: break an event into small steps">
+            <Icon name="plus" size={16} /> Plan a thing
+          </Link>
           {me.role === 'parent' && (
             <Link to="/summit" className={`btn small${summitNudge ? ' primary' : ' ghost'} summit-label`} aria-label={summitDone ? 'Weekly summit (done this week)' : 'Weekly summit: plan the week ahead'}>
               <Icon name="compass" size={16} /> {summitDone ? 'Week planned' : 'Plan the week'}

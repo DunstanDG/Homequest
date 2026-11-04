@@ -34,6 +34,7 @@ import { CheckIn } from '@/screens/checkin/CheckIn'
 import { HouseRun } from '@/screens/house/HouseRun'
 import { HouseStart } from '@/screens/house/HouseStart'
 import { ProjectScreen } from '@/screens/plan/ProjectScreen'
+import { PlanAThing } from '@/screens/plan/PlanAThing'
 import { LearnHome, LearnPlay, LearnRewards, LearnSkillMap, LearnSpelling, LearnSpellingPlay } from '@/screens/learn/lazy'
 import { QuickAdd } from './QuickAdd'
 import { useAppNightMode } from './night'
@@ -85,6 +86,7 @@ function Shell({ newPerson }: { newPerson: boolean }) {
             <Route path="/checkin/:part" element={<CheckIn />} />
             <Route path="/house/rooms" element={<HouseCatalog />} />
             <Route path="/project/:id" element={<ProjectScreen />} />
+            <Route path="/plan/new-thing" element={<PlanAThing />} />
             <Route path="/together" element={<Navigate to="/calendar?v=plans" replace />} />
             <Route path="/care" element={<Care />} />
             <Route path="/vault" element={<Vault />} />

@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useApp, useFamily, useMe, useNow } from '@/app/context'
+import * as A from '@/family/actions'
 import * as P from '@/family/planActions'
 import * as PA from '@/family/projectActions'
 import { addDays, dayName, fmtDuration, friendlyDay, ymdOf } from '@/family/dates'
@@ -11,7 +12,7 @@ import { Avatar, CheckCircle, MemberChips, ScreenHead } from '@/ui/fam'
 import { Icon } from '@/ui/icons'
 import { Bar, Sheet } from '@/ui/primitives'
 import { usePeople } from '@/screens/family/shared'
-import { ProjectFields, draftOf, useBreakdown, type ProjectFormState } from './Projects'
+import { ProjectFields, draftOf, useBreakdown, useStartStep, type ProjectFormState } from './Projects'
 
 /** Colours for linked clusters (activities that must be done in order), so a chain reads as one thing. */
 const LINK_COLOURS = ['#4cc9f0', '#f72585', '#ffc857', '#80ed99', '#b388ff', '#ff9f68']
@@ -126,8 +127,13 @@ export function ProjectScreen() {
     nav(`/run/${runId}`)
   }
 
+  const startStep = useStartStep()
+  const [whole, setWhole] = useState(false)
   const tick = (a: ActivityEvent, done: boolean) => {
-    const evs = PA.tickActivity(me.id, f, a, done, Date.now())
+    // A "Plan a thing" step is also a task on someone's day: ticking the step ticks that too, so it leaves their Today.
+    const lt = f.tasks[`plan-${a.activityId}`]
+    const taskEvs = done && lt && !lt.deleted && !f.done[`${lt.taskId}|${lt.date ?? 'any'}`] ? A.completeTask(me.id, f, lt, lt.date ?? 'any', { minutes: a.minutes }, Date.now() + 1) : []
+    const evs = [...PA.tickActivity(me.id, f, a, done, Date.now()), ...taskEvs]
     act(evs)
     if (done) toast(`Done: ${a.title}`, { undo: () => act(P.undoEvents(me.id, evs)) })
   }
@@ -194,7 +200,7 @@ export function ProjectScreen() {
               )}
             </span>
             <span className="act-meta">
-              {n.isGroup ? `${n.stepsDone}/${n.stepsTotal} done · ${n.minutesLeft ? `${fmtDuration(n.minutesLeft)} left` : 'finished'}` : minLabel(a.minutes)}
+              {n.isGroup ? `${n.stepsDone}/${n.stepsTotal} done · ${n.complete ? 'finished' : 'in progress'}` : minLabel(a.minutes)}
               {ownWaits.length > 0 && <span className="act-wait"> · 🔒 after {ownWaits.map((w) => w.title).join(', ')}</span>}
             </span>
           </button>
@@ -250,33 +256,36 @@ export function ProjectScreen() {
           {p.goal && p.goal !== p.title && <p className="project-goal">{p.goal}</p>}
           {t.stepsTotal > 0 && (
             <>
-              <div className="row-between tight">
-                <span className="muted small">
-                  {t.stepsDone} of {t.stepsTotal} steps done · {t.minutesLeft ? `${fmtDuration(t.minutesLeft)} to go` : 'all done'}
-                </span>
-                {owner && <Avatar m={owner} size={24} />}
-              </div>
+              {ready[0] ? (
+                <div className="project-next-up">
+                  <p className="eyebrow">Next</p>
+                  <div className="proj-next-card">
+                    <CheckCircle done={false} onClick={() => tick(ready[0]!, true)} label={`Done: ${ready[0]!.title}`} />
+                    <span className="grow">
+                      <strong>{ready[0]!.title}</strong> <small className="muted">(~{minLabel(ready[0]!.minutes)})</small>
+                    </span>
+                    {owner && <Avatar m={owner} size={24} />}
+                  </div>
+                  <button type="button" className="btn primary block" onClick={() => startStep(t, ready[0]!)}>
+                    <Icon name="play" size={18} /> Start
+                  </button>
+                </div>
+              ) : (
+                <p className="muted small">{t.order.length === 0 ? 'Every step is done. Lovely.' : 'The next step is waiting on another one.'}</p>
+              )}
+              <p className="proj-steps-line">{t.stepsDone} of {t.stepsTotal} steps done</p>
               <Bar value={t.stepsDone / t.stepsTotal} tone={t.stepsDone === t.stepsTotal ? 'good' : 'accent'} />
             </>
           )}
-          {ready.length > 0 && (
-            <div className="project-next-up">
-              <p className="eyebrow">Next up</p>
-              <ul>
-                {ready.slice(0, 3).map((a) => (
-                  <li key={a.activityId}>
-                    <CheckCircle done={false} onClick={() => tick(a, true)} label={`Done: ${a.title}`} />
-                    <span className="grow">{a.title}</span>
-                    <small className="muted">{minLabel(a.minutes)}</small>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          {t.roots.length > 0 && (
+            <button type="button" className="link-btn wide" aria-expanded={whole} onClick={() => setWhole(!whole)}>
+              {whole ? 'Hide the whole plan' : 'Show the whole plan'}
+            </button>
           )}
-          {t.order.length > 0 && (
+          {whole && t.order.length > 0 && (
             <div className="btn-row">
-              <button type="button" className="btn primary" onClick={() => setPlay({})}>
-                <Icon name="play" size={18} /> Play
+              <button type="button" className="btn" onClick={() => setPlay({})}>
+                <Icon name="play" size={16} /> Play several
               </button>
               <button type="button" className="btn" onClick={() => setPlanning(true)}>
                 <Icon name="calendar" size={16} /> Plan sessions
@@ -309,7 +318,7 @@ export function ProjectScreen() {
             </div>
           </div>
         </div>
-      ) : (
+      ) : !whole ? null : (
         <>
           {big.length > 0 && !select && (
             <div className="card act-detail">
@@ -364,7 +373,7 @@ export function ProjectScreen() {
         </>
       )}
 
-      {sessions.length > 0 && (
+      {whole && sessions.length > 0 && (
         <>
           <h2 className="project-h2">Planned sessions</h2>
           {upcoming.length === 0 && <p className="note">All the planned sessions are behind you. Plan more when you’re ready.</p>}
