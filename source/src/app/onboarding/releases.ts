@@ -43,6 +43,25 @@ export const AREA_LABEL: Record<Area, { label: string; emoji: string }> = {
 }
 
 export const RELEASES: ReleaseNote[] = [
+  {
+    id: '2026-11-04-edit-place-in-event',
+    date: '2026-11-04',
+    audience: 'all',
+    area: 'calendar',
+    emoji: '📍',
+    title: 'Edit a place while you add an event',
+    short: 'Edit places',
+    body: 'In an event’s Getting there, tap Edit under the chosen place to change its name, station or walk without going to Travel.',
+  },
+  {
+    id: '2026-11-04-fix-progress-tabs',
+    date: '2026-11-04',
+    audience: 'parent',
+    area: 'app',
+    emoji: '📐',
+    title: 'Progress tabs all fit on the screen',
+    fix: true,
+  },
   // ---------------------------------------------------------------- 31 October 2026 (0.16)
   {
     id: '2026-10-31-journey-times',

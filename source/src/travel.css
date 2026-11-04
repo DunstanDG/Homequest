@@ -22,6 +22,8 @@
 .station-picker .station-hits li + li { border-top: 1px solid var(--line); }
 .station-picker .station-hits button { width: 100%; text-align: left; padding: 10px 12px; background: var(--surface); border: 0; color: var(--text); font: inherit; }
 .trip-editor { display: grid; gap: 10px; }
+.trip-editor .place-edit { display: inline-flex; align-items: center; gap: 6px; align-self: start; min-height: 40px; padding: 6px 2px; cursor: pointer; }
+.trip-editor .note .link-btn { padding: 0; cursor: pointer; font-size: inherit; text-decoration: underline; }
 .trip-editor .seg { display: flex; flex-wrap: wrap; }
 .trip-editor .seg .seg-btn { flex: 1 1 auto; }
 .via-row { gap: 8px; }

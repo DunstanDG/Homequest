@@ -1,7 +1,7 @@
 {
   "name": "homequest",
   "private": true,
-  "version": "0.16.0",
+  "version": "0.16.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "audit:content": "tsx scripts/content-audit.ts",
     "triage": "tsx scripts/feedback-triage.ts",
-    "simulate": "tsx scripts/simulate.ts"
+    "simulate": "tsx scripts/simulate.ts",
+    "audit:layout": "node scripts/layout-audit.cjs"
   },
   "dependencies": {
     "idb-keyval": "^6.3.0",

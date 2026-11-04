@@ -60,10 +60,23 @@ export function StationPicker({ value, onChange, label }: { value?: string; onCh
 
 const KIND_LABEL: Record<PlaceKind, string> = { home: '🏠 Home', work: '💼 Work', school: '🏫 School', other: '📍 Other' }
 
-export function PlaceSheet({ open, onClose, place, onSaved }: { open: boolean; onClose: () => void; place?: PlaceEvent; onSaved?: (placeId: string) => void }) {
+export function PlaceSheet({
+  open,
+  onClose,
+  place,
+  onSaved,
+  onRemoved,
+}: {
+  open: boolean
+  onClose: () => void
+  place?: PlaceEvent
+  onSaved?: (placeId: string) => void
+  /** Called after the place is removed, so a form that had it selected can move off it. */
+  onRemoved?: (placeId: string) => void
+}) {
   return (
     <Sheet open={open} onClose={onClose} title={place ? 'Edit place' : 'New place'}>
-      {open && <PlaceForm place={place} onDone={(id) => (id && onSaved?.(id), onClose())} />}
+      {open && <PlaceForm place={place} onDone={(id) => (id ? onSaved?.(id) : place && onRemoved?.(place.placeId), onClose())} />}
     </Sheet>
   )
 }
@@ -122,7 +135,8 @@ function PlaceForm({ place, onDone }: { place?: PlaceEvent; onDone: (placeId?: s
 export function TripEditor({ value, onChange, defaultMode = 'train', timed = true }: { value?: TripSpec; onChange: (v: TripSpec | undefined) => void; defaultMode?: TravelMode; timed?: boolean }) {
   const f = useFamily()
   const places = livePlaces(f).filter((p) => p.kind !== 'home')
-  const [newPlace, setNewPlace] = useState(false)
+  // The place sheet: closed, adding a new place, or editing the one chosen for this trip.
+  const [placeSheet, setPlaceSheet] = useState<'new' | 'edit' | undefined>()
   const mode: TravelMode = value?.mode ?? 'none'
   const set = (patch: Partial<TripSpec>) => onChange({ placeId: value?.placeId ?? places[0]?.placeId ?? '', mode: value?.mode ?? defaultMode, ...value, ...patch })
   const place = value ? f.travel.places[value.placeId] : undefined
@@ -149,16 +163,28 @@ export function TripEditor({ value, onChange, defaultMode = 'train', timed = tru
                   {p.name}
                 </button>
               ))}
-              <button type="button" className="chip small" onClick={() => setNewPlace(true)}>
+              <button type="button" className="chip small" onClick={() => setPlaceSheet('new')}>
                 + New place
               </button>
             </div>
+            {place && !place.deleted && (
+              <button type="button" className="link-btn place-edit" onClick={() => setPlaceSheet('edit')}>
+                <Icon name="pencil" size={14} /> Edit {place.name}
+              </button>
+            )}
             {place?.station && mode === 'train' && (
               <small className="muted">
                 Train to {place.stationName ?? place.station}, then {place.walkMin ?? 0} min walk
               </small>
             )}
-            {place && !place.station && mode === 'train' && <small className="note warn">This place has no station yet. Edit it in Travel → Places.</small>}
+            {place && !place.station && mode === 'train' && (
+              <small className="note warn">
+                This place has no station yet.{' '}
+                <button type="button" className="link-btn" onClick={() => setPlaceSheet('edit')}>
+                  Add its station
+                </button>
+              </small>
+            )}
             {place && mode === 'bus' && <small className="muted">Bus times come from the timetable (not live). Walking to and from the stops is included.</small>}
           </div>
           {mode === 'train' && (
@@ -219,7 +245,13 @@ export function TripEditor({ value, onChange, defaultMode = 'train', timed = tru
           </label>
         </>
       )}
-      <PlaceSheet open={newPlace} onClose={() => setNewPlace(false)} onSaved={(id) => set({ placeId: id })} />
+      <PlaceSheet
+        open={!!placeSheet}
+        onClose={() => setPlaceSheet(undefined)}
+        place={placeSheet === 'edit' ? place : undefined}
+        onSaved={(id) => set({ placeId: id })}
+        onRemoved={(id) => set({ placeId: places.find((p) => p.placeId !== id)?.placeId ?? '' })}
+      />
     </div>
   )
 }

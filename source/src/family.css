@@ -279,6 +279,12 @@ a.card.callout { text-decoration: none; color: inherit; }
 .tabs .tab { padding: 8px 12px; flex: 0 0 auto; }
 .tabs.sub { margin-top: 12px; gap: 4px; }
 .tabs.sub .tab { padding: 8px 11px; }
+/* The Progress sub-tabs (five of them) need ~410px at the size above, but a 402px phone (iPhone 16 Pro) only gives
+   them 370px, so "Goals" sat off the edge. Let them share the row and tighten up; the row still scrolls sideways
+   on anything narrower. */
+@media (max-width: 440px) {
+  .tabs.sub .tab { flex: 1 1 auto; padding: 8px 6px; font-size: 14px; text-align: center; }
+}
 .member-list { display: grid; gap: 4px; }
 .mr-btn { appearance: none; width: 100%; display: flex; align-items: center; gap: 12px; background: none; border: 0; padding: 6px 0; text-align: left; color: var(--text); cursor: pointer; min-height: 52px; }
 .mr-btn small { display: block; }
