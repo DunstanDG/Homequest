@@ -1,0 +1,36 @@
+/* B: celebrations. Motion rules only apply when celebrate.tsx asks for them (never under lowStim or reduced motion). */
+.cel-layer { position: fixed; inset: 0; pointer-events: none; z-index: 90; display: flex; align-items: flex-end; justify-content: center; padding: 0 16px calc(96px + env(safe-area-inset-bottom)); }
+.cel-item { position: absolute; left: 0; right: 0; bottom: calc(96px + env(safe-area-inset-bottom)); display: flex; justify-content: center; }
+.cel-item.big { bottom: 38%; }
+.cel-card { position: relative; display: inline-flex; align-items: center; gap: 10px; max-width: min(92vw, 420px); padding: 10px 16px; border-radius: 999px; background: var(--surface, #fff); color: var(--text, #1b1b1f); border: 1px solid var(--line, rgba(0,0,0,.12)); box-shadow: 0 6px 20px rgba(0,0,0,.14); font-weight: 600; }
+.cel-card.moving { animation: cel-pop .5s cubic-bezier(.2,1.4,.4,1) both; }
+.cel-msg { overflow-wrap: anywhere; }
+.cel-chip { font-weight: 700; white-space: nowrap; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--accent, #f5b301) 22%, transparent); }
+.cel-chip.flying { animation: cel-float 2.2s ease-out both; }
+.cel-burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.cel-burst span { position: absolute; left: 0; top: 0; font-size: 20px; opacity: 0; animation: cel-fly 1.3s ease-out both; }
+.cel-item.big .cel-burst span { font-size: 26px; animation-duration: 1.7s; }
+@keyframes cel-pop { from { transform: translateY(14px) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes cel-float { 0% { transform: translateY(0); } 100% { transform: translateY(-24px); opacity: .85; } }
+@keyframes cel-fly {
+  0% { transform: translate(0, 0) rotate(0) scale(.4); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cel-card.moving, .cel-chip.flying, .cel-burst span { animation: none; }
+  .cel-burst { display: none; }
+}
+
+/* B: Look what you did, family goal, forgiving week */
+.done-today ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.done-today li { display: flex; gap: 8px; align-items: baseline; overflow-wrap: anywhere; }
+.done-today .thanks { margin: 10px 0 0; font-weight: 600; }
+.goal-bar { display: block; color: inherit; text-decoration: none; }
+.goal-bar p { margin: 0 0 8px; font-weight: 600; overflow-wrap: anywhere; }
+.week-dots { display: flex; gap: 4px; margin-top: 6px; }
+.week-dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--line, rgba(128,128,128,.3)); display: block; }
+.week-dots i.on { background: var(--accent, #f5b301); }
+.week-dots i.today { outline: 2px solid var(--accent, #f5b301); outline-offset: 1px; }
+.shop-next { margin: 4px 0 12px; }
+.shop-next p { margin: 0 0 6px; font-weight: 600; }

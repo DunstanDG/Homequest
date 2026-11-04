@@ -1,0 +1,60 @@
+/* F: calm navigation (0.18): the More search box, Settings, Plan › Routines and the weekly plan (/week).
+ * Imported by the screens that use it (More, SettingsHub, Plan, WeekPlan), so it needs no line in main.tsx. */
+
+/* ---- More: search */
+.hub-search { position: relative; margin: 0 0 14px; }
+.hub-search .tbox { padding-left: 40px; font-size: 16px; }
+.hub-search .hub-search-ic { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; display: flex; }
+.hub-search .hub-search-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); }
+.hub-where { display: block; color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+.hub-list .grow { min-width: 0; overflow-wrap: anywhere; }
+
+/* ---- Settings */
+.settings-hub .hub-group:first-of-type { margin-top: 4px; }
+
+/* ---- Plan › Routines */
+.routines-tabs { margin: 0 0 12px; }
+.routines-tabs .seg { width: 100%; }
+.routines-tabs .seg-btn { flex: 1 1 0; min-width: 0; }
+.kind-field .seg { width: 100%; }
+.kind-field .seg-btn { flex: 1 1 0; min-width: 0; }
+
+/* ---- the weekly plan */
+.week-plan .wk-steps { margin: 4px 0 6px; }
+.week-plan .wk-step-text { margin: 0 0 6px; color: var(--muted); font-size: 13px; font-weight: 600; letter-spacing: 0.02em; }
+.week-plan .wk-step-bar { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; }
+.week-plan .wk-step-bar li { flex: 1 1 0; min-width: 0; }
+.week-plan .wk-seg { appearance: none; display: block; width: 100%; height: 24px; padding: 0; border: 0; background: none; cursor: pointer; position: relative; }
+.week-plan .wk-seg::before { content: ''; position: absolute; left: 0; right: 0; top: 9px; height: 6px; border-radius: 3px; background: var(--line); }
+.week-plan .wk-seg.past::before { background: var(--surface3); }
+.week-plan .wk-seg.on::before { background: var(--accent); }
+.week-plan .wk-title { font-size: 20px; margin: 6px 0 10px; }
+.week-plan .wk-body { min-width: 0; }
+.week-plan .wk-card h3 { margin: 0 0 6px; font-size: 16px; }
+.week-plan .wk-card > p:first-child { margin-top: 0; }
+.week-plan .wk-nav { margin-top: 16px; }
+.week-plan .wk-nav .btn.grow { min-width: 0; }
+
+.wk-five { border-left: 3px solid var(--accent); }
+.wk-five .row-between { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.wk-five h2.section { margin: 0; }
+.wk-five-list { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; }
+.wk-five-list li { display: flex; align-items: center; gap: 10px; min-width: 0; overflow-wrap: anywhere; font-size: 16px; }
+.wk-five-list li.done .grow { color: var(--muted); }
+.wk-five-mark { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; color: var(--good); }
+.wk-five-list li.done .wk-five-mark { border-color: var(--good); }
+.wk-calm { margin: 6px 0 0; font-weight: 600; }
+
+.week-plan .wk-count { margin: 0 0 6px; }
+.week-plan .wk-add { display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; margin-top: 8px; }
+.week-plan .wk-add .tbox { min-width: 0; font-size: 16px; }
+.week-plan .wk-add .btn { flex: none; }
+.week-plan .wk-pick-group { margin: 0 0 12px; }
+.week-plan .wk-pick-group h3 { margin: 0 0 6px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.week-plan .wk-pick-list { list-style: none; margin: 0 0 6px; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.week-plan .wk-pick-list li + li { border-top: 1px solid var(--line); }
+.week-plan .wk-pick { appearance: none; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 10px 12px; background: none; border: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.week-plan .wk-pick .grow { min-width: 0; overflow-wrap: anywhere; }
+.week-plan .wk-pick:disabled { opacity: 0.5; cursor: default; }
+.week-plan .wk-tick { flex: none; width: 24px; height: 24px; border-radius: 7px; border: 2px solid var(--line); display: inline-flex; align-items: center; justify-content: center; color: var(--bg); }
+.week-plan .wk-pick.on .wk-tick { background: var(--accent); border-color: var(--accent); }

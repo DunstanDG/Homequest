@@ -1,0 +1,295 @@
+/* Family sessions: the setup page, the live session and the rooms-and-jobs editor. Uses the shared tokens in styles.css. */
+.house-sessions {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.house-sessions .switch-row small,
+.house-start .switch-row small {
+  display: block;
+  font-weight: 400;
+}
+.house-links {
+  flex-wrap: wrap;
+}
+.house-banner .plan-emoji {
+  font-size: 26px;
+}
+
+.house-start,
+.house-run,
+.house-catalog {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  padding-bottom: calc(var(--safe-b, 0px) + 96px);
+}
+.house-start .card h3 {
+  margin: 0 0 8px;
+}
+.house-summary {
+  display: grid;
+  gap: 8px;
+}
+.house-loads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.house-load {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.house-clock {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.house-clock strong {
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+.house-room {
+  padding: 0;
+  overflow: hidden;
+}
+.house-room > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  cursor: pointer;
+  list-style: none;
+}
+.house-room > summary::-webkit-details-marker {
+  display: none;
+}
+.house-room.off > summary {
+  opacity: 0.6;
+}
+.house-room > summary small {
+  display: block;
+}
+.house-who {
+  max-width: 38%;
+}
+.house-jobs {
+  list-style: none;
+  margin: 0;
+  padding: 0 12px 8px;
+  display: grid;
+}
+.house-jobs li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+.house-jobs li label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  cursor: pointer;
+}
+.house-jobs li.dim {
+  opacity: 0.7;
+}
+.house-jobs small {
+  display: block;
+}
+.house-folded {
+  padding: 0 12px 10px;
+}
+.house-folded > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 14px;
+  padding: 6px 0;
+}
+.house-folded .house-jobs {
+  padding: 0;
+}
+.house-start-bar {
+  position: sticky;
+  bottom: calc(var(--safe-b, 0px) + 8px);
+  z-index: 5;
+  padding: 8px 0;
+  background: linear-gradient(transparent, var(--bg, #141a3a) 40%);
+}
+
+.house-room-card {
+  display: grid;
+  gap: 4px;
+}
+.house-room-card > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.house-room-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  appearance: none;
+  background: none;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+.house-room-head small {
+  display: block;
+}
+.house-jobs.live {
+  padding: 0;
+}
+.house-job {
+  min-height: 48px;
+}
+.house-job.done .house-job-title {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.house-job.skipped .house-job-title {
+  color: var(--muted);
+}
+.house-job-body {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  appearance: none;
+  background: none;
+  border: 0;
+  color: inherit;
+  padding: 4px 0;
+  cursor: pointer;
+  min-width: 0;
+}
+.house-job-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.house-actions {
+  flex-wrap: wrap;
+}
+.house-people {
+  margin-top: 2px;
+}
+.house-people-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: grid;
+  gap: 8px;
+}
+.house-people-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.house-done {
+  border-color: var(--good);
+}
+
+.board-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.board-list li {
+  display: grid;
+  gap: 2px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.board-list li span {
+  font-size: 14px;
+}
+
+/* ---------------------------------------------------------------- check-ins */
+.checkin-card { align-items: flex-start; }
+.checkin-card .checkin-emoji { font-size: 30px; line-height: 1; }
+.checkin-card .btn { margin-top: 6px; text-decoration: none; }
+.checkin-done { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+.checkin .review-lines { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.checkin .review-lines li { display: flex; gap: 10px; align-items: flex-start; }
+.checkin .review-lines small { display: block; }
+.checkin .review-ahead { margin-top: 10px; }
+.checkin .review-ahead ul { margin: 6px 0 0; padding-left: 18px; }
+.checkin .btn-row { margin: 12px 0; }
+.habit-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.habit-row { display: flex; align-items: center; gap: 10px; min-height: 48px; }
+.habit-row.done strong { text-decoration: line-through; opacity: 0.6; }
+.habit-row small { display: block; }
+.habit-emoji { font-size: 22px; width: 28px; text-align: center; }
+.habit-later { margin-top: 10px; }
+.checkin-habits h3, .checkin-mood h3 { margin: 0; }
+.checkin-habits, .checkin-mood { margin-top: 12px; }
+.mood-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 10px 0; }
+.mood-btn { display: grid; justify-items: center; gap: 2px; padding: 8px 2px; border-radius: 14px; border: 2px solid transparent; background: var(--surface-2, rgba(127, 127, 127, 0.12)); font: inherit; color: inherit; min-height: 64px; cursor: pointer; }
+.mood-btn span { font-size: 28px; line-height: 1.1; }
+.mood-btn small { font-size: 11px; }
+.mood-btn.on { border-color: var(--accent, #4f7cff); background: color-mix(in srgb, var(--accent, #4f7cff) 15%, transparent); }
+.mood-strip { margin: 8px 0 0; letter-spacing: 2px; }
+.checkin-bar { display: grid; gap: 8px; justify-items: center; margin: 16px 0 24px; }
+.checkin-bar .btn { width: 100%; }
+.checkin-settings { display: grid; gap: 10px; }
+.checkin-member { padding: 8px 0; border-top: 1px solid var(--line, rgba(127, 127, 127, 0.2)); }
+.checkin-member summary { display: flex; align-items: center; gap: 8px; cursor: pointer; min-height: 40px; }
+.checkin-member .btn { margin-top: 8px; }
+.who-line { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+
+.habit-edit-row { display: flex; align-items: center; gap: 4px; }
+.habit-edit-row .habit-edit { flex: 1; min-width: 0; }
+.habit-move { display: flex; flex-direction: column; }
+.habit-move .icon-btn { min-height: 28px; min-width: 36px; font-size: 12px; }
+
+.meal-slot-empty { margin-bottom: 4px; }
+.meal-slot-empty .meal-add { width: 100%; }
+.quick-picks { margin: 2px 0 6px; }
+.move-meal { margin: 10px 0; }
+.move-meal summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; }
+.meal-times .mt-label { min-width: 100px; align-self: center; }
+.suggest-list .why { display: block; }
+
+/* ---------------------------------------------------------------- meal ratings */
+.meal-rating .mr-meal { margin: 10px 0; }
+.mr-people { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+.mr-people li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mr-who { display: flex; align-items: center; gap: 6px; }
+.mr-btns { display: flex; gap: 6px; }
+.mr-btn { min-width: 48px; min-height: 44px; border-radius: 12px; border: 2px solid transparent; background: var(--surface-2, rgba(127, 127, 127, 0.14)); font-size: 22px; cursor: pointer; color: inherit; }
+.mr-btn.on { border-color: var(--accent, #4f7cff); background: color-mix(in srgb, var(--accent, #4f7cff) 18%, transparent); }
+.mr-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* routines in the check-in */
+.checkin-routine h3,
+.checkin-leaving h3 { margin: 0; }
+.checkin-routine .row-fields { align-items: center; }
+.checkin-routine .habit-emoji { font-size: 1.6rem; }
+
+/* mood why */
+.why-field textarea { resize: vertical; min-height: 3.2rem; }
+.why-list { margin-top: .5rem; }
+.why-list ul { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .4rem; }
+
+/* School > Now */
+.school-focus .school-kit { margin: 6px 0; }
+.school-lessons { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.school-lessons li { display: grid; grid-template-columns: 48px 1fr auto; gap: 8px; align-items: baseline; }
+.week-fix summary { cursor: pointer; font-weight: 600; }
+.school > .seg { display: flex; }
+.school > .seg .seg-btn { flex: 1; padding-inline: 6px; text-align: center; }
