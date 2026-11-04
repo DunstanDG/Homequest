@@ -11,7 +11,14 @@ import type { PlanBlock } from './travel/types'
 const NOW_BEFORE_MIN = 30
 const NOW_AFTER_MIN = 90
 
-const PART_START: Record<string, number> = { morning: 6 * 60, day: 9 * 60, afternoon: 12 * 60, evening: 17 * 60 }
+/** When each part of the day is "now" (minutes): the current part first, then whenever, then later parts, then
+ * parts already gone (a morning job at 4pm can wait behind the afternoon's). */
+const PART_WINDOW: Record<string, [number, number]> = { morning: [5 * 60, 12 * 60], day: [9 * 60, 17 * 60], afternoon: [12 * 60, 18 * 60], evening: [17 * 60, 24 * 60] }
+const partRank = (part: string, mins: number): number => {
+  const w = PART_WINDOW[part]
+  if (!w) return 1
+  return mins >= w[0] && mins < w[1] ? 0 : mins < w[0] ? 2 : 3
+}
 
 const open = (r: TaskRow): boolean => !r.done || r.done.status === 'rejected'
 
@@ -25,8 +32,7 @@ function rank(r: TaskRow, now: number, planned: PlannedAt): number[] {
   const timedNow = !!at && toMin(at) - mins <= NOW_BEFORE_MIN && mins - toMin(at) <= NOW_AFTER_MIN
   const plannedToday = t.kind === 'homework' && !!t.doOn && t.doOn <= today
   const due = r.overdue || plannedToday || r.date === today ? 0 : r.dueIn !== undefined ? Math.max(0, r.dueIn) : 99
-  const partStart = PART_START[t.part]
-  const partNow = partStart === undefined ? 1 : partStart <= mins ? 0 : 2
+  const partNow = partRank(t.part, mins)
   return [timedNow ? 0 : 1, due, partNow, at ? toMin(at) : 24 * 60, t.minutes ?? 30]
 }
 

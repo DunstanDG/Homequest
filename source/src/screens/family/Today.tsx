@@ -209,7 +209,7 @@ export function Today() {
                 {ordered.length - 3} more when you're ready
               </button>
             ))}
-          {grouped.overdue.length > 0 && canTick && <p className="note calm-row">Some of these are from before. {fresh}</p>}
+          {grouped.overdue.length > 0 && canTick && <p className="note calm-row">A few things are from before. Want a fresh start? {fresh}</p>}
           {more && grouped.done.length > 0 && <Group title="Done" count={grouped.done.length}>{grouped.done.map((r) => line(r))}</Group>}
         </>
       )}
@@ -413,7 +413,7 @@ export function Today() {
           )}
           {active && <ActiveBanner runId={active.id} />}
           <section className="card calm-pause" aria-label="Taking it easy">
-            <p className="cp-line">Taking it easy today. Here's just one thing, if you want it.</p>
+            <p className="cp-line">{next ? "Taking it easy today. Here's just one thing, if you want it." : 'Taking it easy today.'}</p>
             {!next && <p className="muted">Nothing needs doing right now. Rest is good.</p>}
           </section>
           {next && nextCard(next, { notNow: ordered.length > 1 })}
