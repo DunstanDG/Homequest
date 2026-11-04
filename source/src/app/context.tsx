@@ -34,6 +34,8 @@ export interface Settings {
    * `notifyTypes` altogether) means on - turning push on once should mean "on" for everything, with individual
    * types switched off from here rather than needing to opt in to each separately. See `notifyTypeOn` below. */
   notifyTypes?: Partial<Record<NotifyKind, boolean>>
+  /** Calm and accessibility settings for the person holding this phone (src/app/calm.ts). */
+  calm?: import('./calm').CalmPrefs
 }
 
 export type NotifyKind = 'meds' | 'tasks' | 'sleep' | 'feeds' | 'events' | 'homework' | 'checkin'
