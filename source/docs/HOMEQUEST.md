@@ -182,11 +182,32 @@ Thirteen features, built in one pass (item 26 — mystery box, streak shields, c
 - **Daily trivia is the same for the whole family on a given day** (a hash of the date picks the card, like the spelling word list), one go per person per day, and pays out a small flat coin reward on completion.
 - **Family crowdfunding goals are a voluntary, immediate spend of a member's own coins — no parent approval**, unlike a treat request. A parent creates/edits/removes goals; anyone can chip in whatever they choose (up to what they have available) and watch the shared progress bar fill.
 
+## One server for every family, by invitation (0.17)
+
+The app is built with the family server's URL and public key (`.env.production`), so nobody types Supabase details any more.
+Every family lives in the same project, each in its own space: the family key in the family code scopes every row, exactly as
+before. What stops a stranger who finds the app from storing data there is `supabase/schema_v5.sql`:
+
+- **Approved families.** Adding rows (events, push subscriptions, reminders) needs a family key on `public.families`. Running
+  the file approves every family already syncing, so nobody is cut off.
+- **Invites.** An approved family makes one-time codes (`hqi.` + 12 characters, 14 days, at most 5 waiting) in Parent area ›
+  Data › Invite another family. A new family enters one when it turns on sharing (Data, or the optional box when starting a
+  family). The co-parent code carries one too, so the other home's sharing comes on when they paste it.
+- **Before the SQL is run** the app turns sharing on without an invite, as it always did.
+- **Looking after it**: the top of `schema_v5.sql` has the SQL to list families and invites, approve one by hand, remove a
+  family or stop all invites. The code is in `src/storage/invites.ts`, `src/app/pairing.ts` (`enableSharing`),
+  `src/screens/parent/Data.tsx` and `src/screens/family/Coparenting.tsx`; tests in `src/app/invites.test.ts` and
+  `src/storage/schemaInvites.test.ts` (the SQL on a real Postgres).
+
+Limits: the family code is still the only key to a family's data (no per-person accounts), and you, as the project's owner,
+can read every family's rows in the dashboard. Train times, alarms and the assistant still only run for families the home
+server is set up for.
+
 ## Co-parenting (shared child, separate households)
 
 Two households, each running their OWN separate copy of HomeQuest (own family, own event log, own optional Supabase project for their own family sync), can share one child's schedule so a co-parent always knows when the child is with them. The two households' busy-block snapshots for a link live together in ONE shared Supabase project (in practice, whichever household created the link — see below), decentralized and optional exactly as elsewhere: there is no backend of ours. See `docs/ARCHITECTURE.md`'s "Decisions and their reasons" for the full design and why it is deliberately not part of the event log.
 
-- **Set up per child**, in Parent area → Family → "Co-parenting" (`src/screens/family/Coparenting.tsx`): the household that creates the link (needs its own Supabase project already set up, since the link's shared table lives there) picks the child, a rotation anchor Monday and which side of it is "here", and gets a code to send to the other parent. The other household needs no Supabase project of its own — pasting the code in ("I have a code from the other parent") fully configures its side.
+- **Set up per child**, in Parent area → Family → "Co-parenting" (`src/screens/family/Coparenting.tsx`): the household that creates the link (needs sharing turned on, since the link's shared table lives on the same server) picks the child, a rotation anchor Monday and which side of it is "here", and gets a code to send to the other parent. The other household needs no Supabase project of its own — pasting the code in ("I have a code from the other parent") fully configures its side, and (0.17) the invite inside the code turns on that home's own sharing if it hadn't already.
 - **What crosses over, by default:** just busy/free blocks for that one child, drawn from their own agenda — nothing about siblings, nothing about a parent's own personal events beyond the fact of being busy. School lessons, clubs and closures are always labelled by name (e.g. "School", "Football club") since they aren't private.
 - **Sharing full detail** for one event (title, notes, location) is a per-event toggle — "Share details with other home" on the event editor (`src/screens/family/shared.tsx`, `EventSheet`) — shown only when the event involves a child with an active link.
 - **"Whose week"** shows on Today (`src/screens/family/Today.tsx`) for any child with an active link, and the other household's published blocks show as a small "At <label>" section on the Calendar day view (`src/screens/family/Calendar.tsx`, `OtherHomeBlocks`).

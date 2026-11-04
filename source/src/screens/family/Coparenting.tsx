@@ -18,9 +18,11 @@ import type { CoparentLinkEvent, MemberId } from '@/family/types'
 import { friendlyDay, startOfWeek } from '@/family/dates'
 import { Icon } from '@/ui/icons'
 import { copyText } from '@/ui/util'
+import { enableSharing } from '@/app/pairing'
+import { createInvite } from '@/storage/invites'
 
 export function Coparenting() {
-  const { act, toast } = useApp()
+  const { act, toast, repo } = useApp()
   const me = useMe()
   const f = useFamily()
   const coparentSync = useCoparentSync()
@@ -43,9 +45,9 @@ export function Coparenting() {
     )
   }
 
-  const createLink = (childId: MemberId, label: string) => {
+  const createLink = async (childId: MemberId, label: string) => {
     if (!ownUrl || !ownAnonKey) {
-      setMsg('Set up sharing (a Supabase project) for this family first, in the Sharing section above — creating a new co-parent link reuses it.')
+      setMsg('Turn on sharing for this family first (Parent area › Data › Sharing between your phones). The link uses the same server.')
       return
     }
     const draft = A.saveCoparentLink(me!.id, {
@@ -60,13 +62,17 @@ export function Coparenting() {
     act(draft)
     // The event we just created carries the linkId we need for the code; find it back from the events we made.
     const created = draft[0] as CoparentLinkEvent
-    setShowCode(linkCodeFor({ url: ownUrl, anonKey: ownAnonKey, linkKey: created.linkKey, householdSlot: otherSlot(created.householdSlot) }))
+    // Put a one-time family invite in the code, so the other home can turn on its own sharing (on the same server) just by
+    // pasting it. Best effort: without one (offline, invites not set up, 5 already waiting) the link still works.
+    const familyKey = sync.config()?.familyKey
+    const inv = familyKey ? await createInvite({ url: ownUrl, anonKey: ownAnonKey, familyKey }) : undefined
+    setShowCode(linkCodeFor({ url: ownUrl, anonKey: ownAnonKey, linkKey: created.linkKey, householdSlot: otherSlot(created.householdSlot), ...(inv?.ok ? { invite: inv.code } : {}) }))
     setMode(undefined)
     setMsg(undefined)
     toast('Link created. Send the code below to the other parent.')
   }
 
-  const redeemLink = (childId: MemberId, label: string, pasted: string) => {
+  const redeemLink = async (childId: MemberId, label: string, pasted: string) => {
     const code = parseLinkCode(pasted)
     if (!code) return setMsg('That does not look like a HomeQuest co-parent code. It starts with "hqc2.".')
     act(
@@ -82,7 +88,16 @@ export function Coparenting() {
     )
     setMode(undefined)
     setMsg(undefined)
-    toast('Paired. The other home\'s schedule will appear once they publish it.')
+    // A home with no sharing of its own yet: the code's invite turns it on, on the same server, so this family's data is
+    // kept in step across its phones (and backed up) without anyone setting up Supabase.
+    let shared = false
+    if (!sync.config() && code.invite) {
+      const sameServer = code.url === sync.effectiveUrl() && code.anonKey === sync.effectiveAnonKey()
+      const r = await enableSharing(repo, sync, { ...(sameServer ? {} : { url: code.url, anonKey: code.anonKey }), invite: code.invite })
+      shared = r.ok
+      if (r.ok) void sync.syncNow()
+    }
+    toast(shared ? 'Paired, and sharing is on for your family too. The other home\'s schedule will appear once they publish it.' : 'Paired. The other home\'s schedule will appear once they publish it.')
     void coparentSync.syncNow()
   }
 
@@ -107,14 +122,14 @@ export function Coparenting() {
         </div>
       )}
 
-      {mode === 'create' && <LinkForm children={children} submitLabel="Create link" onSubmit={(childId, label) => createLink(childId, label)} onCancel={() => setMode(undefined)} />}
+      {mode === 'create' && <LinkForm children={children} submitLabel="Create link" onSubmit={(childId, label) => void createLink(childId, label)} onCancel={() => setMode(undefined)} />}
 
       {mode === 'redeem' && (
         <LinkForm
           children={children}
           submitLabel="Pair"
           needsCode
-          onSubmit={(childId, label, pasted) => redeemLink(childId, label, pasted ?? '')}
+          onSubmit={(childId, label, pasted) => void redeemLink(childId, label, pasted ?? '')}
           onCancel={() => setMode(undefined)}
         />
       )}

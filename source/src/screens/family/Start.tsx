@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import * as A from '@/family/actions'
 import { useApp, useFamily, useSyncStatus } from '@/app/context'
 import { APP_NAME, ENV_SUPABASE_ANON_KEY, ENV_SUPABASE_URL } from '@/app/config'
-import { joinFamily } from '@/app/pairing'
+import { enableSharing, joinFamily } from '@/app/pairing'
 import { makeEvent } from '@/engine/make'
 import type { MemberRole } from '@/family/types'
 import { Avatar } from '@/ui/fam'
@@ -48,19 +48,30 @@ export function Start() {
       <button type="button" className="btn big block" onClick={() => setStep('join')}>
         Join my family with a code
       </button>
-      <p className="note center">Your family's data stays on your phones and your own Supabase project. Nothing is shared with anyone else.</p>
+      <p className="note center">
+        {ENV_SUPABASE_URL && ENV_SUPABASE_ANON_KEY
+          ? 'Your family’s data stays on your phones, and in your family’s own private space if you turn on sharing. Nothing is shared with anyone else.'
+          : "Your family's data stays on your phones and your own Supabase project. Nothing is shared with anyone else."}
+      </p>
     </div>
   )
 }
 
 function NewFamily({ onBack }: { onBack: () => void }) {
-  const { repo, act, updateSettings } = useApp()
+  const { repo, act, updateSettings, sync } = useApp()
+  const [invite, setInvite] = useState('')
+  const [err, setErr] = useState<string | undefined>()
   const [family, setFamily] = useState('')
   const [name, setName] = useState('')
   const [role, setRole] = useState<MemberRole>('parent')
   const [busy, setBusy] = useState(false)
   const create = async () => {
     setBusy(true)
+    // An invite turns sharing on straight away. Checked first, so a mistyped code doesn't leave a half-made family.
+    if (invite.trim()) {
+      const r = await enableSharing(repo, sync, { invite })
+      if (!r.ok) return (setErr(r.error), setBusy(false))
+    }
     const id = A.newMemberId()
     const evs = [
       makeEvent(id, { type: 'family', name: family.trim() || `The ${name.trim()} family` }),
@@ -96,6 +107,22 @@ function NewFamily({ onBack }: { onBack: () => void }) {
         <span>Family name (optional)</span>
         <input className="tbox" value={family} onChange={(e) => setFamily(e.target.value)} placeholder="e.g. The Smiths" maxLength={30} />
       </label>
+      {ENV_SUPABASE_URL && ENV_SUPABASE_ANON_KEY && (
+        <label className="field">
+          <span>Invite code (optional)</span>
+          <input
+            className="tbox"
+            value={invite}
+            onChange={(e) => (setInvite(e.target.value), setErr(undefined))}
+            placeholder="hqi.... - turns on sharing between your phones"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+          <small className="muted">No code? Leave it empty: everything works on this phone, and you can turn sharing on later.</small>
+        </label>
+      )}
+      {err && <p className="note warn">{err}</p>}
       <button type="button" className="btn primary big block" disabled={!name.trim() || busy} onClick={() => void create()}>
         Let's go
       </button>

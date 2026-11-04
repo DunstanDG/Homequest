@@ -14,6 +14,69 @@ import { Coparenting } from '@/screens/family/Coparenting'
 import * as CA from '@/family/careActions'
 import { cleanVoiceSettings, COMMAND_PHRASES, DEFAULT_VOICE, validZone } from '../../../supabase/functions/_shared/careCommand'
 import { PrivateKeys } from '@/screens/family/PrivateKeys'
+import { createInvite, familyStatus, inviteErrorText } from '@/storage/invites'
+
+/** Make one-time invite codes for other families (supabase/schema_v5.sql). Hidden until the project has invites. */
+function InviteFamilies() {
+  const sync = useSyncStatus()
+  const { demo } = useApp()
+  const familyKey = sync.config()?.familyKey
+  const url = sync.effectiveUrl()
+  const anonKey = sync.effectiveAnonKey()
+  const [state, setState] = useState<'checking' | 'hidden' | 'ready'>('checking')
+  const [open, setOpen] = useState(0)
+  const [made, setMade] = useState<{ code: string; expiresAt: string } | undefined>()
+  const [msg, setMsg] = useState<string | undefined>()
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    if (!familyKey || !url || !anonKey || demo) return setState('hidden')
+    let live = true
+    void familyStatus({ url, anonKey, familyKey }).then((st) => {
+      if (!live) return
+      if (st.ok && !st.notSetUp && st.approved) (setOpen(st.openInvites), setState('ready'))
+      else setState('hidden')
+    })
+    return () => {
+      live = false
+    }
+  }, [familyKey, url, anonKey, demo])
+  if (state !== 'ready' || !familyKey || !url || !anonKey) return null
+  const make = async () => {
+    setBusy(true)
+    setMsg(undefined)
+    const r = await createInvite({ url, anonKey, familyKey })
+    setBusy(false)
+    if (!r.ok) return setMsg(inviteErrorText(r.error))
+    setMade({ code: r.code, expiresAt: r.expiresAt })
+    setOpen((n) => n + 1)
+  }
+  const until = made?.expiresAt ? new Date(made.expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : ''
+  return (
+    <section className="card">
+      <h3 id="sec-invite">Invite another family</h3>
+      <p className="muted">
+        HomeQuest families share one server, and a new family needs an invite to turn on sharing. Each code works once, for one family, for 14 days. They get their own separate space: they can’t see
+        anything of yours, and you can’t see theirs.
+      </p>
+      {made && (
+        <div className="codebox">
+          <code>{made.code}</code>
+          <button type="button" className="btn ghost small" onClick={async () => setMsg((await copyText(made.code)) ? 'Invite code copied.' : 'Could not copy - select it manually.')}>
+            <Icon name="copy" size={16} /> Copy
+          </button>
+          <p className="note">
+            They open HomeQuest, start their family, then go to Parent area › Data › Turn on sharing and enter this code{until ? `. It works until ${until}` : ''}.
+          </p>
+        </div>
+      )}
+      <button type="button" className="btn ghost" disabled={busy || open >= 5} onClick={() => void make()}>
+        <Icon name="plus" size={18} /> {made ? 'Make another invite' : 'Make an invite code'}
+      </button>
+      {open > 0 && <p className="note">{open} of 5 invites waiting to be used.</p>}
+      {msg && <p className="note">{msg}</p>}
+    </section>
+  )
+}
 
 const NOTIFY_TYPES: { id: NotifyKind; label: string }[] = [
   { id: 'meds', label: 'Next safe dose (medicine)' },
@@ -140,6 +203,9 @@ export function Data() {
   const [url, setUrl] = useState(sync.config()?.url ?? ENV_SUPABASE_URL ?? '')
   const [anon, setAnon] = useState(sync.config()?.anonKey ?? ENV_SUPABASE_ANON_KEY ?? '')
   const [showCode, setShowCode] = useState(false)
+  const [invite, setInvite] = useState('')
+  const [shareErr, setShareErr] = useState<string | undefined>()
+  const [turningOn, setTurningOn] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [erase, setErase] = useState(0)
   useEffect(() => {
@@ -180,7 +246,9 @@ export function Data() {
         {!configured ? (
           <>
             <p className="muted">
-              Everything lives on this phone. To share the calendar, lists, trackers and coins between phones, connect the family's Supabase project. Nothing leaves this phone until you do this.
+              {ENV_SUPABASE_URL && ENV_SUPABASE_ANON_KEY
+                ? 'Everything lives on this phone. Turn on sharing to keep the calendar, lists, trackers and coins in step on all your family’s phones (and backed up). Your family gets its own private space; nothing leaves this phone until you do this.'
+                : "Everything lives on this phone. To share the calendar, lists, trackers and coins between phones, connect the family's Supabase project. Nothing leaves this phone until you do this."}
             </p>
             {!(ENV_SUPABASE_URL && ENV_SUPABASE_ANON_KEY) && (
               <>
@@ -194,18 +262,35 @@ export function Data() {
                 </label>
               </>
             )}
+            <label className="field">
+              <span>Invite code (if you were given one)</span>
+              <input
+                className="tbox"
+                value={invite}
+                onChange={(e) => (setInvite(e.target.value), setShareErr(undefined))}
+                placeholder="hqi...."
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+              />
+            </label>
             <button
               type="button"
               className="btn primary block"
-              disabled={demo || (!(ENV_SUPABASE_URL && ENV_SUPABASE_ANON_KEY) && !(url.startsWith('https://') && anon.length > 20))}
+              disabled={demo || turningOn || (!(ENV_SUPABASE_URL && ENV_SUPABASE_ANON_KEY) && !(url.startsWith('https://') && anon.length > 20))}
               onClick={async () => {
-                await enableSharing(repo, sync, { url, anonKey: anon })
+                setTurningOn(true)
+                const r = await enableSharing(repo, sync, { url, anonKey: anon, invite })
+                setTurningOn(false)
+                if (!r.ok) return setShareErr(r.error)
+                setShareErr(undefined)
                 setShowCode(true)
                 void sync.syncNow()
               }}
             >
               <Icon name="cloud" size={18} /> Turn on sharing
             </button>
+            {shareErr && <p className="note warn">{shareErr}</p>}
             {demo && <p className="note warn">This is the demo with made-up data, so sharing is switched off here.</p>}
           </>
         ) : (
@@ -254,6 +339,8 @@ export function Data() {
           </>
         )}
       </section>
+
+      <InviteFamilies />
 
       <NotificationsSection />
 

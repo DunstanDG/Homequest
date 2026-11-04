@@ -48,6 +48,9 @@ export interface CoparentLinkCode {
   linkKey: string
   /** The slot the code's redeemer should adopt. */
   householdSlot: HouseholdSlot
+  /** A one-time family invite (hqi.…) from the household that made the link, so the other home can turn on its own
+   * sharing without needing an invite of its own (see storage/invites.ts). Optional: older codes don't carry one. */
+  invite?: string
 }
 
 export const otherSlot = (slot: HouseholdSlot): HouseholdSlot => (slot === 'a' ? 'b' : 'a')
@@ -58,17 +61,17 @@ export const otherSlot = (slot: HouseholdSlot): HouseholdSlot => (slot === 'a' ?
  * their app to complete the pairing — no Supabase project of their own is needed for this link. Treat it like
  * a password. */
 export function linkCodeFor(code: CoparentLinkCode): string {
-  return `hqc2.${toBase64Url(JSON.stringify({ u: code.url, a: code.anonKey, k: code.linkKey, s: code.householdSlot }))}`
+  return `hqc2.${toBase64Url(JSON.stringify({ u: code.url, a: code.anonKey, k: code.linkKey, s: code.householdSlot, ...(code.invite ? { i: code.invite } : {}) }))}`
 }
 
 export function parseLinkCode(code: string): CoparentLinkCode | null {
   const m = /^hqc2\.([A-Za-z0-9_-]+)$/.exec(code.trim())
   if (!m) return null
   try {
-    const raw = JSON.parse(fromBase64Url(m[1] as string)) as { u?: string; a?: string; k?: string; s?: string }
+    const raw = JSON.parse(fromBase64Url(m[1] as string)) as { u?: string; a?: string; k?: string; s?: string; i?: string }
     if (!raw.u || !raw.a || !raw.k || !/^https:\/\//.test(raw.u) || raw.k.length < 8) return null
     if (raw.s !== 'a' && raw.s !== 'b') return null
-    return { url: raw.u, anonKey: raw.a, linkKey: raw.k, householdSlot: raw.s }
+    return { url: raw.u, anonKey: raw.a, linkKey: raw.k, householdSlot: raw.s, ...(typeof raw.i === 'string' && /^hqi\.[a-z2-9]{12}$/.test(raw.i) ? { invite: raw.i } : {}) }
   } catch {
     return null
   }

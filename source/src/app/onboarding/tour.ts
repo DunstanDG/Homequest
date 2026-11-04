@@ -72,7 +72,9 @@ export function setupSteps({ f, schoolKids, syncOn, syncSkipped, notificationsOn
   ]
   if (kids.length) steps.push({ id: 'school', emoji: '🏫', title: 'Add school', hint: 'Paste the school pack, or try the sample school.', to: '/school', done: schoolKids > 0 })
   steps.push(
-    { id: 'sync', emoji: '☁️', title: 'Share between phones', hint: 'Connect Supabase, then join from each phone with the family code.', to: '/parent?tab=data', done: syncOn || syncSkipped },
+    // Optional: HomeQuest works fully on one phone. Sharing needs no Supabase set-up of your own (the app has its server built
+    // in); a new family just needs an invite code from one already using it.
+    { id: 'sync', emoji: '☁️', title: 'Share between phones', hint: 'Optional. Turn on sharing in Data (with an invite code), then join from each phone with the family code.', to: '/parent?tab=data', done: syncOn || syncSkipped, optional: true },
     { id: 'notify', emoji: '🔔', title: 'Notifications on this phone', hint: 'Reminders for events, homework, feeds and medicine.', to: '/parent?tab=data', done: notificationsOn },
   )
   if (kids.length) steps.push({ id: 'coins', emoji: '🪙', title: 'Coins and treats', hint: 'How points and homework turn into coins, and what they can buy.', to: '/parent?tab=family', done: f.economy.length > 0 })

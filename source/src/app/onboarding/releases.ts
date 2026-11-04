@@ -43,6 +43,18 @@ export const AREA_LABEL: Record<Area, { label: string; emoji: string }> = {
 }
 
 export const RELEASES: ReleaseNote[] = [
+  // ---------------------------------------------------------------- 4 November 2026 (0.17)
+  {
+    id: '2026-11-04-shared-server',
+    date: '2026-11-04',
+    audience: 'parent',
+    area: 'app',
+    emoji: '☁️',
+    title: 'Sharing without setting up Supabase',
+    short: 'Easy sharing',
+    body: 'HomeQuest now has its server built in, so turning on sharing is one tap, with an invite code for a new family. Make invites in Data › Invite another family. A co-parent link carries one, so the other home is set up just by pasting it.',
+    to: '/parent?tab=data&s=sync',
+  },
   {
     id: '2026-11-04-edit-place-in-event',
     date: '2026-11-04',

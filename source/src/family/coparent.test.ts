@@ -60,6 +60,15 @@ describe('coparent: link codes', () => {
     expect(parseLinkCode(c)).toEqual(code)
   })
 
+  it('a link code can carry a one-time family invite, and old codes without one still parse', () => {
+    const base = { url: 'https://example.supabase.co', anonKey: 'anon-key-123456', linkKey: 'linkkey12345678', householdSlot: 'b' as const }
+    expect(parseLinkCode(linkCodeFor({ ...base, invite: 'hqi.abcdefghjk23' }))).toEqual({ ...base, invite: 'hqi.abcdefghjk23' })
+    expect(parseLinkCode(linkCodeFor(base))).toEqual(base)
+    // A malformed invite is dropped rather than spoiling the link.
+    const odd = `hqc2.${Buffer.from(JSON.stringify({ u: base.url, a: base.anonKey, k: base.linkKey, s: 'b', i: 'not-an-invite' })).toString('base64url')}`
+    expect(parseLinkCode(odd)).toEqual(base)
+  })
+
   it('otherSlot flips a and b', () => {
     expect(otherSlot('a')).toBe('b')
     expect(otherSlot('b')).toBe('a')
