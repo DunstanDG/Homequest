@@ -1,0 +1,533 @@
+/* StudyQuest - mobile-first dark theme. Colours are tokens; games and subjects override --accent. */
+:root {
+  color-scheme: dark;
+  --bg: #0c1024;
+  --bg2: #10162e;
+  --surface: #151a35;
+  --surface2: #1d2347;
+  --surface3: #252c58;
+  --line: #2a3160;
+  --text: #eef1ff;
+  --muted: #9aa3c7;
+  --accent: #4cc9f0;
+  --xp: #ffc857;
+  --good: #3ddc97;
+  --good-bg: rgba(61, 220, 151, 0.14);
+  --bad: #ff7070;
+  --bad-bg: rgba(255, 112, 112, 0.14);
+  --warn: #ffa94d;
+  /* Care screens (baby/dog) use only these two: never --bad/red, so nothing there reads as an alarm. Below target is
+     "not there yet" (neutral grey); overdue or worth a look is amber. See docs/HOMEQUEST.md. */
+  --care-neutral: #4a5184;
+  --care-neutral-bg: rgba(154, 163, 199, 0.12);
+  --care-warm: #ffb454;
+  --care-warm-bg: rgba(255, 180, 84, 0.14);
+  --radius: 16px;
+  --tab-h: 64px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+  /* The tab bar's bottom padding: most of the home-indicator area, not all of it (labels sit ~20pt clear of the
+     indicator, like native tab bars), and a little padding on phones with no inset at all. */
+  --tab-pad-b: max(6px, calc(env(safe-area-inset-bottom, 0px) - 14px));
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  /* The document itself never scrolls - only .app-body does (see below). On iOS/WebKit, a `position: fixed`
+     element (the tab bar) inside a page whose BODY scrolls can visually detach from the viewport edge during
+     fast or momentum scrolling until the next scroll/tap forces it to re-anchor. Pinning the body and giving
+     the content its own scroll container removes the fixed tab bar's dependency on document scroll entirely,
+     so it can never "come loose". */
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  background: radial-gradient(1200px 500px at 50% -10%, #1a2150 0%, var(--bg) 60%) fixed, var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.4;
+  overscroll-behavior-y: none;
+  touch-action: manipulation;
+}
+#root { display: flex; flex-direction: column; height: 100dvh; }
+/* Installed on the home screen there's no browser toolbar to allow for, and on iOS (with the translucent status
+   bar) 100dvh comes out a status-bar's height short of the screen, leaving an empty strip under the tab bar. The
+   body is already pinned to the full screen (position: fixed; inset: 0), so fill that instead. */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  #root { height: 100%; }
+  .sheet-wrap { height: auto !important; }
+}
+html.standalone #root { height: 100%; }
+html.standalone .sheet-wrap { height: auto !important; }
+h1 { font-size: 26px; line-height: 1.15; margin: 4px 0 8px; letter-spacing: -0.01em; }
+h2 { font-size: 18px; margin: 0 0 8px; }
+h3 { font-size: 16px; margin: 0 0 6px; }
+p { margin: 0 0 8px; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em; word-break: break-all; }
+button { font: inherit; color: inherit; }
+input, textarea { font: inherit; color: inherit; }
+ul { padding: 0; margin: 0; list-style: none; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.note { color: var(--muted); font-size: 14px; margin: 6px 0; }
+.note.bad { color: var(--bad); }
+.lead { font-size: 18px; color: var(--muted); margin-bottom: 16px; }
+.eyebrow { text-transform: uppercase; font-size: 12px; letter-spacing: 0.08em; color: var(--muted); margin: 0; }
+.section { margin: 20px 0 10px; font-size: 18px; }
+.up { color: var(--good); }
+.down { color: var(--bad); }
+
+/* ---------------------------------------------------------------- layout */
+.boot { min-height: 100%; display: grid; place-content: center; gap: 12px; text-align: center; padding: 24px; }
+.spinner { width: 36px; height: 36px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--accent); animation: spin 0.8s linear infinite; margin: 0 auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+/* The one scroll container for the whole app - see the body/#root comment above. flex:1+min-height:0 is what
+   lets it actually shrink to fill the space left by the tab bar instead of overflowing the flex column. */
+.app-body { max-width: 520px; margin: 0 auto; width: 100%; flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; padding-bottom: calc(var(--safe-b) + 12px); }
+.app-body.no-tabs { padding-bottom: 0; }
+.screen { padding: calc(var(--safe-t) + 16px) 16px 24px; position: relative; }
+.screen > .back { position: absolute; top: calc(var(--safe-t) + 8px); left: 8px; }
+.tabbar {
+  /* A normal flex item, not `position: fixed` - it sits below the scrolling .app-body in #root's own flex
+     column, so it's laid out once by the browser and never needs to re-anchor against document scroll. */
+  flex: none; z-index: 20;
+  display: flex; justify-content: center; gap: 0;
+  padding: 6px 8px var(--tab-pad-b);
+  background: rgba(16, 22, 46, 0.92); backdrop-filter: blur(12px); border-top: 1px solid var(--line);
+}
+.tabbar-item { flex: 1; max-width: 120px; display: grid; justify-items: center; gap: 2px; padding: 6px 4px; color: var(--muted); text-decoration: none; font-size: 12px; border-radius: 12px; }
+.tabbar-item.active { color: var(--accent); }
+.tab-ic { position: relative; display: grid; }
+.dot { position: absolute; top: -2px; right: -4px; width: 9px; height: 9px; border-radius: 50%; background: var(--bad); border: 2px solid var(--bg2); }
+
+/* ---------------------------------------------------------------- basics */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin: 0 0 12px; }
+.card.row { display: flex; align-items: center; gap: 10px; }
+.card.danger { border-color: rgba(255, 112, 112, 0.4); }
+.card.callout { display: flex; gap: 12px; align-items: flex-start; background: linear-gradient(135deg, var(--surface2), var(--surface)); }
+.card.callout > svg { color: var(--accent); flex: none; margin-top: 2px; }
+.card.revise > svg { color: var(--warn); }
+.btn { text-decoration: none;
+  appearance: none; border: 1px solid var(--line); background: var(--surface2); color: var(--text);
+  border-radius: 14px; padding: 10px 16px; min-height: 44px; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform 0.08s ease, filter 0.15s ease;
+}
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: transparent; color: #071026; }
+.btn.ghost { background: transparent; }
+.btn.danger { background: var(--bad); border-color: transparent; color: #260707; }
+.btn.big { min-height: 54px; font-size: 17px; border-radius: 16px; }
+.btn.small { min-height: 36px; padding: 6px 12px; font-size: 14px; border-radius: 12px; }
+.btn.block { display: flex; width: 100%; margin-top: 10px; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.icon-btn { appearance: none; border: 0; background: transparent; color: var(--text); width: 44px; height: 44px; border-radius: 12px; display: inline-grid; place-items: center; cursor: pointer; text-decoration: none; position: relative; }
+.icon-btn:active { background: var(--surface2); }
+.icon-btn.dotted::after { content: ''; position: absolute; top: 9px; right: 9px; width: 9px; height: 9px; border-radius: 50%; background: var(--bad); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+.chip { appearance: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 14px; min-height: 40px; cursor: pointer; font-weight: 600; }
+.chip.selected { background: var(--accent); border-color: transparent; color: #071026; }
+.chip.small { min-height: 32px; padding: 4px 10px; font-size: 14px; font-weight: 500; }
+.chip.xp { background: rgba(255, 200, 87, 0.15); border-color: rgba(255, 200, 87, 0.35); color: var(--xp); cursor: default; }
+.pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--surface3); color: var(--muted); white-space: nowrap; }
+.pill.tone-good { background: var(--good-bg); color: var(--good); }
+.pill.tone-warn { background: rgba(255, 169, 77, 0.16); color: var(--warn); }
+.pill.tone-bad { background: var(--bad-bg); color: var(--bad); }
+.pill.tone-accent { background: rgba(76, 201, 240, 0.16); color: var(--accent); }
+.pill.tone-xp { background: rgba(255, 200, 87, 0.16); color: var(--xp); }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.list li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.list li:last-child { border-bottom: 0; }
+.list li.stack { display: grid; gap: 2px; }
+.list.tight li { padding: 6px 0; }
+.li-main { font-weight: 600; }
+.facts li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.facts li:last-child { border-bottom: 0; }
+.facts span { color: var(--muted); }
+/* min-width: 0 overrides the browser's default "a grid/flex item won't shrink below its content's natural
+   size" behaviour. Without it, a .field sitting in a two-column row (.grid2/.two-col) - e.g. the Starts/Ends
+   time pickers on the event editor - can't shrink to fit its 1fr track if the input inside it has a wide
+   native minimum width, so the row (and the whole sheet, since it just allows overflow rather than clipping
+   it) ends up wider than the screen: a slight side-to-side scroll, and the two columns can crowd or visually
+   run into each other instead of sitting cleanly side by side. Harmless everywhere else - it only changes
+   anything when a .field is a flex/grid item being asked to shrink in the first place. */
+.field { display: grid; gap: 4px; margin: 10px 0; min-width: 0; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.override-editor { display: grid; gap: 4px; }
+.field > span { font-size: 13px; color: var(--muted); }
+.tbox, .note-input {
+  width: 100%; background: var(--bg2); border: 2px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 18px; outline: none;
+}
+.tbox:focus, .note-input:focus { border-color: var(--accent); }
+.tbox.good { border-color: var(--good); background: var(--good-bg); }
+.tbox.bad { border-color: var(--bad); background: var(--bad-bg); }
+.note-input { font-size: 15px; resize: vertical; margin: 8px 0; }
+.toggle { display: flex; gap: 10px; align-items: center; margin: 12px 0; justify-content: center; }
+.toggle input { width: 22px; height: 22px; accent-color: var(--accent); }
+.switch-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.switch-row:last-child { border-bottom: 0; }
+.sr-main { flex: 1; display: grid; }
+.switch { width: 46px; height: 26px; appearance: none; background: var(--surface3); border-radius: 999px; position: relative; cursor: pointer; transition: background 0.15s; flex: none; }
+.switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform 0.15s; }
+.switch:checked { background: var(--good); }
+.switch:checked::after { transform: translateX(20px); }
+.empty { text-align: center; color: var(--muted); padding: 28px 12px; display: grid; justify-items: center; gap: 6px; }
+.empty h3 { color: var(--text); margin: 0; }
+.toast { position: fixed; top: calc(var(--safe-t) + 12px); left: 50%; transform: translateX(-50%); z-index: 60; max-width: min(92vw, 420px); background: var(--surface3); border: 1px solid var(--line); padding: 10px 16px; border-radius: 14px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); animation: toast-in 0.2s ease; text-align: center; }
+@keyframes toast-in { from { opacity: 0; margin-top: -8px; } }
+
+/* ------------------------------------------------------------ rings, bars */
+.ring { position: relative; display: inline-grid; place-items: center; flex: none; }
+.ring svg { position: absolute; inset: 0; }
+.ring-track { stroke: var(--surface3); }
+.ring-val { stroke: var(--accent); transition: stroke-dasharray 0.5s ease; }
+.ring.tone-xp .ring-val { stroke: var(--xp); }
+.ring.tone-good .ring-val { stroke: var(--good); }
+.ring-in { position: relative; font-weight: 800; }
+.ring-big { font-size: 34px; font-weight: 800; line-height: 1; }
+.ring-big small { font-size: 16px; color: var(--muted); font-weight: 600; }
+.lvl { font-size: 22px; }
+.bar { height: 10px; border-radius: 999px; background: var(--surface3); overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 999px; background: var(--accent); transition: width 0.5s ease; }
+.bar.tone-xp .bar-fill { background: var(--xp); }
+.bar.tone-good .bar-fill { background: var(--good); }
+.bar.tone-warn .bar-fill { background: var(--warn); }
+.bar.tone-bad .bar-fill { background: var(--bad); }
+
+/* ------------------------------------------------------------ bottom sheet */
+/* height: 100dvh (not just inset: 0, which sizes off the browser's static/large viewport) so this
+   matches #root's own 100dvh exactly - otherwise the sheet can be positioned/sized against a taller
+   viewport than what's actually visible, and its bottom edge (with align-items: flex-end) ends up
+   past what the user can see, right around where the tab bar sits underneath it. */
+.sheet-wrap { position: fixed; inset: 0; height: 100dvh; z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+.sheet-backdrop { position: absolute; inset: 0; border: 0; background: rgba(4, 6, 18, 0.65); }
+/* max-height is capped below 100dvh (not 90dvh) so there's always visible backdrop above the sheet as
+   a "there's a gap here" cue, and the bottom padding has extra fixed buffer beyond the safe-area inset -
+   env(safe-area-inset-bottom) doesn't reliably cover Android's gesture/nav bar the way it does iOS's
+   home indicator, so the last button in a long sheet (e.g. "Log bottle") could otherwise sit flush
+   against, or just under, on-screen system/app chrome instead of clearly above it. */
+/* overscroll-behavior-y: contain stops a drag inside the sheet from "chaining" into whatever scrollable
+   element is behind it once the sheet itself runs out of room to scroll (or has nothing to scroll at all) -
+   without it, the sheet is a fixed overlay on screen but the PAGE BEHIND IT is still the thing that actually
+   scrolls, since the sheet is still a DOM descendant of .app-body (position:fixed only changes where it's
+   painted, not the DOM ancestry the browser uses to decide where a scroll gesture chains to next). .app-body
+   already has this same protection for the same reason. -webkit-overflow-scrolling: touch keeps scrolling
+   inside the sheet itself smooth (momentum) on iOS, same as .app-body. */
+.sheet { position: relative; width: 100%; max-width: 520px; max-height: calc(100dvh - 32px); overflow: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; background: var(--surface); border-radius: 22px 22px 0 0; border: 1px solid var(--line); padding: 8px 16px calc(28px + var(--safe-b)); animation: sheet-in 0.22s ease; }
+@keyframes sheet-in { from { transform: translateY(40px); opacity: 0; } }
+.sheet-grab { width: 44px; height: 4px; border-radius: 4px; background: var(--line); margin: 4px auto 6px; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; }
+.sheet-head h2 { margin: 0; }
+.fb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.fb-opt { appearance: none; border: 2px solid var(--line); background: var(--surface2); border-radius: 14px; padding: 12px 8px; display: grid; justify-items: center; gap: 4px; min-height: 76px; cursor: pointer; text-align: center; }
+.fb-opt.selected { border-color: var(--accent); background: rgba(76, 201, 240, 0.12); }
+.fb-label { font-weight: 600; font-size: 14px; }
+
+/* ------------------------------------------------------------------- home */
+.home-head { display: flex; justify-content: space-between; align-items: flex-start; }
+.head-actions { display: flex; gap: 2px; }
+.stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 12px; }
+.stat { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; text-decoration: none; color: inherit; }
+.stat strong { display: block; }
+.stat small { color: var(--muted); font-size: 12px; }
+.streak-ic { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: var(--surface3); color: var(--muted); flex: none; }
+.streak-ic.alive { background: rgba(255, 169, 77, 0.18); color: var(--warn); }
+.quest-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.quest-top h3 { margin: 0; display: flex; align-items: center; gap: 6px; }
+.quest .muted { margin: 8px 0 0; }
+.quest.done { border-color: rgba(61, 220, 151, 0.45); }
+.games { display: grid; gap: 10px; }
+.gamecard { appearance: none; text-align: left; display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: var(--radius); padding: 14px; cursor: pointer; min-height: 76px; }
+.gamecard:active { transform: scale(0.99); }
+.game-ic { width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); flex: none; }
+.game-txt { flex: 1; display: grid; }
+.game-txt small { color: var(--muted); }
+.gamecard > svg:last-child { color: var(--muted); }
+
+/* ------------------------------------------------------------- skill map */
+.strand-top { display: flex; justify-content: space-between; align-items: baseline; }
+.strand-top h3 { margin-bottom: 8px; }
+.skill-list { margin-top: 8px; }
+.skill-row { appearance: none; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: transparent; border: 0; border-top: 1px solid var(--line); padding: 10px 2px; text-align: left; cursor: pointer; min-height: 52px; }
+.sr-side { display: flex; align-items: center; gap: 8px; }
+.sr-main strong { font-weight: 600; }
+.due-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--warn); }
+
+/* ------------------------------------------------------ intro / summary */
+.intro { text-align: center; padding-top: 56px; }
+.intro-icon { width: 96px; height: 96px; border-radius: 28px; display: grid; place-items: center; margin: 8px auto 12px; background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+.intro .card, .intro .blurb { text-align: left; }
+.blurb { display: grid; gap: 8px; margin: 12px 0; }
+.blurb li { position: relative; padding-left: 22px; color: var(--muted); }
+.blurb li::before { content: ''; position: absolute; left: 4px; top: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.welcome { text-align: center; padding-top: 48px; }
+.welcome .field, .welcome .chips { text-align: left; }
+.welcome .chips { justify-content: center; }
+.sum-hero { text-align: center; display: grid; justify-items: center; gap: 8px; margin: 8px 0 16px; }
+.sum-hero .bar { width: 100%; max-width: 320px; }
+.xp-total { font-size: 34px; font-weight: 800; color: var(--xp); }
+.lvl-line { color: var(--muted); font-size: 14px; }
+.badge-row, .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.badge { display: grid; justify-items: center; text-align: center; gap: 4px; padding: 12px 8px; border-radius: var(--radius); background: var(--surface); border: 1px dashed var(--line); color: var(--muted); align-content: start; }
+.badge small { font-size: 12px; }
+.badge.earned { background: linear-gradient(160deg, rgba(255, 200, 87, 0.18), var(--surface)); border: 1px solid rgba(255, 200, 87, 0.45); color: var(--xp); }
+.badge.earned strong { color: var(--text); }
+.delta { margin-bottom: 10px; }
+.delta-top { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px; }
+.actions { margin-top: 16px; }
+.level-card { display: flex; align-items: center; gap: 16px; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; display: grid; }
+.tile strong { font-size: 26px; }
+.tile small { color: var(--muted); }
+.news-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.news-q { color: var(--muted); font-size: 14px; }
+
+/* ------------------------------------------------------------ parent area */
+.parent-head { display: flex; justify-content: space-between; align-items: center; }
+.tabs { display: flex; gap: 6px; overflow-x: auto; margin: 8px -16px 12px; padding: 0 16px 4px; scrollbar-width: none; }
+.tab { appearance: none; border: 0; background: var(--surface); border-radius: 999px; padding: 8px 14px; white-space: nowrap; cursor: pointer; font-weight: 600; color: var(--muted); }
+.tab.selected { background: var(--accent); color: #071026; }
+.count { margin-left: 6px; background: var(--bad); color: #fff; border-radius: 999px; padding: 0 7px; font-size: 12px; }
+.gate { display: grid; justify-items: center; gap: 4px; text-align: center; padding-top: 48px; max-width: 320px; margin: 0 auto; }
+.gate .keypad { width: 100%; }
+.pin-dots { display: flex; gap: 14px; margin: 8px 0; }
+.pin-dots span { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--muted); }
+.pin-dots span.on { background: var(--accent); border-color: var(--accent); }
+.wk-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 8px 0 12px; }
+.wk-col { display: grid; justify-items: center; gap: 2px; }
+.wk-bar-wrap { height: 90px; width: 100%; display: flex; align-items: flex-end; }
+.wk-bar { width: 100%; background: var(--surface3); border-radius: 6px 6px 2px 2px; }
+.wk-bar.on { background: var(--xp); }
+.tier-row { margin: 10px 0; }
+.tier-top { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; }
+.tier-bar { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: var(--surface3); }
+.t-new { background: var(--surface3); }
+.t-learning { background: var(--bad); }
+.t-developing { background: var(--warn); }
+.t-secure { background: var(--good); }
+.t-mastered { background: var(--xp); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); margin-top: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
+.summary-text { white-space: pre-wrap; background: var(--bg2); border-radius: 12px; padding: 12px; font-family: inherit; font-size: 14px; margin: 0 0 10px; }
+.report .report-q { font-weight: 600; }
+.report .quote { border-left: 3px solid var(--accent); padding-left: 10px; color: var(--muted); }
+.report.status-fixed, .report.status-wont-fix, .report.status-not-a-bug { opacity: 0.8; }
+.codebox { background: var(--bg2); border-radius: 12px; padding: 12px; margin: 10px 0; display: grid; gap: 8px; }
+
+/* ------------------------------------------------------------ question screen */
+/* A fixed, viewport-sized overlay - NOT sized off its parent (.app-body, a flex:1 item that is ALSO an
+   overflow-y:auto scroll container). Percentage/height-100% through a flex+scroll ancestor like that is only
+   reliable in some engines; Safari/WebKit in particular can treat it as not having a "definite" height, which
+   silently collapses this to zero height - the game still runs (meteors spawn, timers tick) but nothing is
+   visible, because its own container has no visible size. Sizing directly against the viewport with
+   position:fixed (the same technique .sheet-wrap already uses) removes that whole chain of maybes. This also
+   means it now covers the tab bar itself, which is harmless - every route that renders a .qscreen already
+   hides the tab bar (.app-body.no-tabs) anyway. */
+.qscreen { position: fixed; inset: 0; height: 100dvh; z-index: 45; display: flex; flex-direction: column; max-width: 520px; margin: 0 auto; background: var(--bg); }
+.qhead { display: flex; align-items: center; gap: 4px; padding: calc(var(--safe-t) + 6px) 8px 4px; }
+.qprog { flex: 1; display: grid; gap: 4px; min-width: 0; }
+.qlabel { font-size: 12px; color: var(--muted); font-weight: 600; }
+.pips { display: flex; gap: 4px; }
+.pip { flex: 1; height: 8px; border-radius: 4px; background: var(--surface3); }
+.pip.done { background: var(--accent); }
+.pip.now { background: color-mix(in srgb, var(--accent) 45%, var(--surface3)); }
+.pips.slim .pip { height: 6px; }
+.timerbar { height: 10px; border-radius: 999px; background: var(--surface3); overflow: hidden; }
+.timerfill { height: 100%; background: var(--accent); transition: width 0.25s linear; }
+.combo-chip { display: inline-flex; align-items: center; gap: 2px; background: rgba(255, 169, 77, 0.18); color: var(--warn); border-radius: 999px; padding: 3px 9px; font-weight: 800; animation: pop 0.25s ease; }
+@keyframes pop { 50% { transform: scale(1.18); } }
+.qscroll { flex: 1; overflow-y: auto; padding: 8px 16px 0; overscroll-behavior: contain; }
+.reason { display: inline-block; font-size: 12px; color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 999px; padding: 3px 10px; margin-bottom: 10px; }
+.prompt { font-size: 20px; line-height: 1.45; margin-bottom: 12px; }
+.hintbox { display: flex; gap: 10px; align-items: flex-start; background: rgba(255, 200, 87, 0.1); border: 1px solid rgba(255, 200, 87, 0.35); color: #ffe6ae; border-radius: 14px; padding: 10px 12px; margin: 8px 0 12px; }
+.hintbox svg { flex: none; margin-top: 2px; color: var(--xp); }
+.qpad { height: 16px; }
+.qfoot { background: var(--bg2); border-top: 1px solid var(--line); padding: 8px 12px calc(10px + var(--safe-b)); }
+.qfoot-slot:empty { display: none; }
+.qfoot .btn.block { margin-top: 8px; }
+.fpanel { border-radius: 16px; padding: 12px 14px; display: grid; gap: 6px; animation: sheet-in 0.2s ease; max-height: 62dvh; overflow-y: auto; }
+.fpanel.good { background: var(--good-bg); border: 1px solid rgba(61, 220, 151, 0.45); }
+.fpanel.bad { background: var(--bad-bg); border: 1px solid rgba(255, 112, 112, 0.45); }
+.fhead { display: flex; align-items: center; gap: 8px; font-size: 18px; }
+.fpanel.good .fhead svg { color: var(--good); }
+.fpanel.bad .fhead svg { color: var(--bad); }
+.xp-chip { margin-left: auto; background: rgba(255, 200, 87, 0.18); color: var(--xp); border-radius: 999px; padding: 2px 10px; font-weight: 800; font-size: 15px; animation: pop 0.3s ease; }
+.fans { font-weight: 700; }
+.fmsg, .fexp { color: #dfe4ff; font-size: 15px; }
+.fworking summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+.fworking { font-size: 15px; }
+.parts { display: flex; flex-wrap: wrap; gap: 6px; }
+.levelup { display: flex; align-items: center; gap: 8px; background: linear-gradient(90deg, rgba(255, 200, 87, 0.28), transparent); border-radius: 12px; padding: 8px 10px; font-weight: 700; color: var(--xp); }
+.overlay { position: fixed; inset: 0; background: rgba(4, 6, 18, 0.7); display: grid; place-items: center; z-index: 40; }
+.timeup { font-size: 56px; font-weight: 900; color: var(--xp); animation: pop 0.4s ease; }
+
+/* ------------------------------------------------------------ Equation Defence (meteor shell) */
+.shell-meteor .qhead .lives { display: flex; gap: 2px; }
+.shell-meteor .qhead .lives svg { color: var(--surface3); }
+.shell-meteor .qhead .lives svg.lit { color: var(--bad); }
+.shell-meteor .qhead .lives svg.lost { opacity: 0.35; }
+.meteor-field { position: relative; flex: 1; overflow: hidden; background: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%); }
+/* Falls via a CSS @keyframes animation (set inline as `animation: meteor-fall <duration>ms linear forwards`
+   by the component), NOT a `transition` on `top`. A transition only animates a CHANGE from a style the
+   browser already painted - which on a freshly-mounted element needs a real paint of the "before" value to
+   happen before the "after" value is set (the classic double-requestAnimationFrame trick), and that turned
+   out not to be reliable here across engines (reported stuck at the landed position, not moving, in both
+   Safari and Firefox). A @keyframes animation has no such requirement: its `from` keyframe IS the starting
+   state, applied from the moment the animation starts, so it always plays correctly on mount. The -14%/86%
+   values here must stay in sync with the JS constants they mirror (the meteor's spawn top and `LAND_PCT` in
+   MeteorDefence.tsx). */
+@keyframes meteor-fall { from { top: -14%; } to { top: 86%; } }
+.meteor { position: absolute; top: -14%; transform: translateX(-50%); width: 31%; min-width: 92px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; border-radius: 16px; background: var(--bg2); border: 1.5px solid var(--line); color: var(--text); }
+.meteor svg { flex: none; color: var(--accent); }
+.meteor-q { font-size: 14px; font-weight: 700; text-align: center; line-height: 1.2; }
+.meteor.hit { animation: meteor-hit 0.38s ease forwards; }
+.meteor.missed { animation: meteor-missed 0.5s ease forwards; }
+@keyframes meteor-hit { 0% { transform: translateX(-50%) scale(1); opacity: 1; } 40% { transform: translateX(-50%) scale(1.35); opacity: 1; filter: brightness(1.8); } 100% { transform: translateX(-50%) scale(0.2); opacity: 0; } }
+@keyframes meteor-missed { 0% { transform: translateX(-50%) translateY(0); opacity: 1; } 100% { transform: translateX(-50%) translateY(10px); opacity: 0; } }
+.base-line { position: absolute; left: 0; right: 0; height: 2px; background: color-mix(in srgb, var(--accent) 55%, transparent); }
+.meteor-foot { display: grid; gap: 8px; }
+.fire-readout { text-align: center; font-size: 26px; font-weight: 800; min-height: 34px; letter-spacing: 1px; }
+.fire-readout .ph { color: var(--muted); font-weight: 500; font-size: 16px; }
+.fire-readout.miss { animation: shake 0.26s ease; color: var(--bad); }
+
+/* ------------------------------------------------------------ answers */
+.answer-area { margin: 6px 0 4px; }
+.answer-area.shake { animation: shake 0.35s ease; }
+@keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+.answer-stack { display: grid; gap: 10px; }
+.answer-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 22px; }
+.answer-row.template { gap: 6px; }
+.afix { font-size: 22px; }
+.alabel { font-size: 16px; color: var(--muted); min-width: 70px; }
+.abox { position: relative; min-width: 72px; min-height: 56px; padding: 6px 12px; border-radius: 14px; border: 2px solid var(--line); background: var(--bg2); font-size: 26px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; text-align: center; color: var(--text); }
+.abox.wide { flex: 1; min-width: 0; justify-content: flex-start; overflow-x: auto; }
+.abox.active { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+.abox.sup { min-width: 46px; min-height: 40px; font-size: 20px; align-self: flex-start; margin-top: -10px; padding: 2px 8px; }
+.abox.good { border-color: var(--good); background: var(--good-bg); }
+.abox.bad { border-color: var(--bad); background: var(--bad-bg); }
+.abox .ph { opacity: 0; }
+.caret { display: inline-block; width: 2px; height: 1.2em; background: var(--accent); margin-left: 2px; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.keypad { display: grid; gap: 6px; margin-bottom: 6px; }
+.key { appearance: none; border: 0; border-radius: 12px; min-height: 48px; font-size: 22px; font-weight: 600; background: var(--surface2); color: var(--text); cursor: pointer; display: grid; place-items: center; }
+.key:active { background: var(--surface3); transform: scale(0.96); }
+.key.op { background: var(--surface3); color: #c9d1ff; }
+.key.var { background: color-mix(in srgb, var(--accent) 22%, var(--surface2)); color: var(--accent); font-style: italic; }
+.key.action { background: var(--surface); color: var(--muted); }
+.keypad.dense .key { min-height: 42px; font-size: 20px; }
+@media (max-height: 720px) {
+  .key { min-height: 42px; font-size: 20px; }
+  .keypad.dense .key { min-height: 38px; }
+  .btn.big { min-height: 48px; }
+}
+.options { display: grid; gap: 10px; margin-top: 6px; }
+.option { appearance: none; text-align: left; border: 2px solid var(--line); background: var(--surface); border-radius: 14px; padding: 14px; font-size: 18px; min-height: 56px; cursor: pointer; color: var(--text); }
+.option.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+.option.good { border-color: var(--good); background: var(--good-bg); }
+.option.bad { border-color: var(--bad); background: var(--bad-bg); }
+.option.dim { opacity: 0.55; }
+.order-dir { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 14px; margin: 4px 2px; }
+.arrow { flex: 1; text-align: center; letter-spacing: 4px; }
+.order-slots { display: grid; gap: 6px; }
+.slot { appearance: none; display: flex; align-items: center; gap: 10px; min-height: 50px; border: 2px dashed var(--line); background: transparent; border-radius: 12px; padding: 6px 12px; font-size: 20px; text-align: left; cursor: pointer; color: var(--text); }
+.slot.filled { border-style: solid; background: var(--surface); }
+.slot.good { border-color: var(--good); background: var(--good-bg); }
+.slot.shown { border-color: var(--good); }
+.slot-n { width: 24px; height: 24px; border-radius: 50%; background: var(--surface3); display: grid; place-items: center; font-size: 13px; color: var(--muted); flex: none; }
+.order-pool { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.order-pool .chip { font-size: 20px; min-height: 48px; padding: 8px 16px; }
+.match { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.match-col { display: grid; gap: 8px; align-content: start; }
+.mcard { appearance: none; border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px; min-height: 54px; font-size: 17px; cursor: pointer; color: var(--text); }
+.mcard.selected { border-color: var(--accent); }
+.mcard.paired.p0 { border-color: #4cc9f0; background: rgba(76, 201, 240, 0.15); }
+.mcard.paired.p1 { border-color: #ffc857; background: rgba(255, 200, 87, 0.15); }
+.mcard.paired.p2 { border-color: #b892ff; background: rgba(184, 146, 255, 0.15); }
+.mcard.paired.p3 { border-color: #3ddc97; background: rgba(61, 220, 151, 0.15); }
+.mcard.paired.p4 { border-color: #ff7070; background: rgba(255, 112, 112, 0.15); }
+.mcard.good { box-shadow: inset 0 0 0 2px var(--good); }
+.mcard.bad { box-shadow: inset 0 0 0 2px var(--bad); }
+.accents { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.accents .chip { cursor: pointer; }
+
+/* ------------------------------------------------------------ rich text */
+.frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 0.15em; line-height: 1.15; font-size: 0.9em; }
+.frac .num { border-bottom: 0.09em solid currentColor; padding: 0 0.2em 0.05em; }
+.frac .den { padding: 0.05em 0.2em 0; }
+sup, sub { font-size: 0.7em; line-height: 0; }
+
+/* ------------------------------------------------------------ figures */
+.figure { margin: 4px 0 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 8px; }
+.fig-svg { width: 100%; height: auto; max-height: 300px; display: block; }
+.fig-note { text-align: center; font-size: 11px; color: var(--muted); margin-top: 2px; }
+.fig-svg text { fill: var(--text); font-size: 13px; paint-order: stroke; stroke: var(--surface); stroke-width: 3.5px; stroke-linejoin: round; }
+.fig-svg .lbl { font-size: 15px; font-weight: 600; }
+.fig-svg .lbl.dim { font-size: 14px; fill: #dfe4ff; }
+.fig-svg .lbl.small { font-size: 13px; font-weight: 500; }
+.fig-svg .lbl.big { font-size: 20px; font-weight: 700; }
+.fig-svg .lbl.unk { fill: var(--xp); font-weight: 800; }
+.fig-svg .tick { font-size: 11px; fill: var(--muted); }
+.fig-svg .tick.strong { fill: var(--text); font-size: 13px; font-weight: 600; }
+.fig-svg .axis-name { font-size: 12px; fill: var(--muted); font-style: italic; }
+.fig-svg .grid-bg { fill: rgba(255, 255, 255, 0.02); }
+.fig-svg .grid { stroke: var(--line); stroke-width: 1; }
+.fig-svg .axis { stroke: #8f99c9; stroke-width: 1.6; }
+.fig-svg .ln { stroke: #dfe4ff; stroke-width: 2; fill: none; stroke-linecap: round; }
+.fig-svg .ln.thin { stroke-width: 1.4; }
+.fig-svg .ln.accent { stroke: var(--accent); }
+.fig-svg .dash { stroke: #9aa3c7; stroke-width: 1.5; stroke-dasharray: 5 4; }
+.fig-svg .mirror { stroke: var(--xp); stroke-width: 2; stroke-dasharray: 7 5; }
+.fig-svg .poly { fill: rgba(76, 201, 240, 0.18); stroke: var(--accent); stroke-width: 2.2; stroke-linejoin: round; }
+.fig-svg .poly.light { fill: rgba(76, 201, 240, 0.08); }
+.fig-svg .poly.mid { fill: rgba(76, 201, 240, 0.13); }
+.fig-svg .poly.ghost { fill: none; stroke: #8f99c9; stroke-dasharray: 5 4; stroke-width: 1.8; }
+.fig-svg .pt { fill: var(--xp); stroke: var(--bg); stroke-width: 1.5; }
+.fig-svg .pt.ghost { fill: #8f99c9; }
+.fig-svg .wedge { stroke: none; }
+.fig-svg .wedge.w0 { fill: rgba(76, 201, 240, 0.3); }
+.fig-svg .wedge.w1 { fill: rgba(255, 200, 87, 0.3); }
+.fig-svg .wedge.w2 { fill: rgba(184, 146, 255, 0.3); }
+.fig-svg .wedge.w3 { fill: rgba(61, 220, 151, 0.3); }
+.fig-svg .wedge.w4 { fill: rgba(255, 112, 112, 0.3); }
+.fig-svg .wedge.unk { stroke: var(--xp); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.fig-svg .chart-bar { fill: var(--accent); }
+.fig-table-wrap { overflow-x: auto; }
+.fig-table { border-collapse: collapse; margin: 0 auto; }
+.fig-table th, .fig-table td { border: 1px solid var(--line); padding: 8px 14px; text-align: center; min-width: 56px; }
+.fig-table th { background: var(--surface2); }
+
+/* :not(.meteor) - for every OTHER animation in the app this correctly does the right accessibility thing
+   (crush decorative motion for anyone who has asked their device for less of it). The meteor's fall is the
+   one exception: the falling motion over several seconds isn't decorative, it IS the game - the whole point
+   is judging how much time is left before it lands, and crushing its duration to near-zero means it just
+   jumps straight to "landed" instantly, which breaks the game rather than merely making it less flashy. A
+   class selector (.meteor) is more specific than the universal selector here, so this still wins even though
+   both declarations are !important - CSS resolves ties between equally-important rules by specificity, not
+   by which one is written first. */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.meteor) { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* Reading passages (extracts, poems, sources) and written, self-marked answers */
+.fig-passage { padding: 12px 14px; max-height: 46vh; overflow-y: auto; }
+.passage { margin: 0; font-size: 15px; line-height: 1.55; }
+.passage p { margin: 0 0 10px; }
+.passage-title { font-weight: 700; margin-bottom: 6px; }
+.passage-source { color: var(--muted); font-size: 13px; font-style: italic; margin-top: 4px; }
+.reveal-input { width: 100%; min-height: 120px; resize: vertical; line-height: 1.45; }
+.reveal-model { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 10px 0; }
+.reveal-model h4 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.reveal-checklist { display: grid; gap: 6px; margin: 8px 0 4px; }
+.reveal-check { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); text-align: left; color: inherit; font: inherit; }
+.reveal-check.on { border-color: var(--good); background: var(--good-bg); }
+.reveal-check input { margin-top: 3px; }
+.fig-code { padding: 0; overflow-x: auto; }
+.code-listing { margin: 0; padding: 12px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14px; line-height: 1.5; white-space: pre; tab-size: 4; }
+.code-listing code { background: none; padding: 0; border-radius: 0; font-size: inherit; word-break: normal; white-space: pre; }
+/* Many subjects: keep the subject chips to one swipeable row instead of wrapping down the screen */
+.subject-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
+.subject-chips::-webkit-scrollbar { display: none; }
+.subject-chips .chip { flex: none; }

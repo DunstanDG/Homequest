@@ -1,0 +1,44 @@
+/* UX tidy-up: shop */
+
+/* Add bar sticks to the top of the scroll area (.app-body is the app's one scroll container, see styles.css). It runs
+   edge to edge over the screen's 16px gutter so rows never show through at the sides; the ::before fills the notch
+   strip above it on phones with a top safe area. */
+.add-bar.shop-add {
+  position: sticky; top: var(--safe-t); z-index: 6;
+  margin: 8px -16px; padding: 8px 16px;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+.add-bar.shop-add::before { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: var(--safe-t); background: inherit; }
+.add-bar.shop-add .tbox { min-width: 0; flex: 1; }
+.add-bar.shop-add + .usuals { margin-top: 0; }
+
+/* Collapsible aisle headers: the whole header is the button. */
+.aisle h3 { margin: 0 0 6px; }
+.aisle.shut h3 { margin-bottom: 0; }
+.aisle-head {
+  appearance: none; background: transparent; border: 0; padding: 6px 2px; margin: -6px 0; width: 100%; min-height: 40px;
+  display: flex; align-items: center; gap: 6px; cursor: pointer; text-align: left;
+  font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit;
+}
+.aisle-head small { margin-left: auto; font-size: 12px; background: var(--surface3); padding: 0 8px; border-radius: 999px; letter-spacing: 0; }
+.aisle-head svg { flex: none; transition: transform 0.15s; transform: rotate(90deg); }
+.aisle.shut .aisle-head svg { transform: rotate(0deg); }
+.aisle.shut .aisle-head { color: var(--text); opacity: 0.85; }
+.aisle-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+
+/* "In the basket": always last, folded by default, with Clear ticked beside its header. */
+.aisle.basket { opacity: 1; border-top: 1px dashed var(--line); padding-top: 10px; }
+.aisle.basket ul { opacity: 0.85; }
+.basket-head { display: flex; align-items: center; gap: 8px; }
+.basket-head h3 { flex: 1; min-width: 0; margin: 0; }
+.aisle.basket:not(.shut) .basket-head { margin-bottom: 6px; }
+.basket-head .btn.small { flex: none; }
+.shop-all-got { margin: 4px 0; }
+
+/* "Milk is on the list twice - merge?" */
+.card.callout.shop-dups { align-items: flex-start; padding: 10px 12px; }
+.shop-dups ul { display: grid; gap: 8px; min-width: 0; }
+.shop-dup { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 15px; }
+.shop-dup > .grow { flex: 1 1 160px; min-width: 0; }
+.shop-dup-actions { display: flex; gap: 6px; flex: none; margin-left: auto; }

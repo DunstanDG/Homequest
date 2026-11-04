@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<rect width="512" height="512" rx="115.2" fill="#FFFFFF"/>
+<g transform="translate(24.06 16.43) scale(0.58719)">
+<defs>
+  <linearGradient id="gL" x1="180" y1="470" x2="400" y2="75" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#FFA41B"/><stop offset="0.45" stop-color="#FF5A4E"/><stop offset="0.75" stop-color="#F0207E"/><stop offset="1" stop-color="#A12BD8"/>
+  </linearGradient>
+  <linearGradient id="gT" x1="400" y1="75" x2="700" y2="330" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#A12BD8"/><stop offset="0.45" stop-color="#5B3BE0"/><stop offset="1" stop-color="#2F55D9"/>
+  </linearGradient>
+  <linearGradient id="gR" x1="660" y1="330" x2="600" y2="610" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#3550D8"/><stop offset="0.5" stop-color="#8A2BD2"/><stop offset="1" stop-color="#E0197C"/>
+  </linearGradient>
+  <linearGradient id="gB" x1="600" y1="605" x2="80" y2="700" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#E0197C"/><stop offset="0.4" stop-color="#FF5A4E"/><stop offset="0.75" stop-color="#FF9A1F"/><stop offset="1" stop-color="#FFA41B"/>
+  </linearGradient>
+  <linearGradient id="gS" x1="270" y1="330" x2="540" y2="450" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#F0306A"/><stop offset="0.5" stop-color="#D21C93"/><stop offset="1" stop-color="#8A2BD2"/>
+  </linearGradient>
+  <linearGradient id="gStar" x1="355" y1="160" x2="445" y2="255" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#FF9A1F"/><stop offset="1" stop-color="#F23B5C"/>
+  </linearGradient>
+</defs>
+<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="50">
+  <!-- left wall up, eave, left roof to the apex -->
+  <path d="M180 462 V368 Q180 350 162 350 H118 Q92 350 110 330 L384 88 Q400 74 416 88" stroke="url(#gL)"/>
+  <!-- apex to chimney, chimney, roof to the right eave -->
+  <path d="M410 82 L540 196 V138 Q540 120 558 120 H598 Q616 120 616 138 V258 L690 324 Q710 342 684 350" stroke="url(#gT)"/>
+  <!-- right eave in, right wall down, round the corner -->
+  <path d="M690 350 H632 Q616 350 616 368 V570 Q616 606 580 606" stroke="url(#gR)"/>
+  <!-- the floor, running out into the curl -->
+  <path d="M590 606 H236 C136 606 72 642 74 700 C76 756 156 764 176 716" stroke="url(#gB)"/>
+</g>
+<!-- the curl's leaf end -->
+<path d="M150 730 C156 692 184 664 230 650 C226 694 200 732 150 730 Z" fill="#FFA41B"/>
+<!-- the swoosh from the star, thin at the star and thicker as it sweeps right -->
+<path d="M398 266 C392 300 352 306 318 320 C268 340 262 388 320 396 C380 404 470 398 520 428" fill="none" stroke="url(#gS)" stroke-width="36" stroke-linecap="round"/>
+<path d="M398 262 C394 286 372 300 340 312" fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" opacity="0"/>
+<path d="M402 252 C398 290 360 302 330 314 L318 320 C352 306 392 300 392 262 Z" fill="url(#gS)"/>
+<circle cx="538" cy="458" r="29" fill="#8A2BD2"/>
+<!-- the star -->
+<path transform="translate(400 205) scale(1.18) translate(-400 -205)" d="M400 160 L413.6 191.3 L447.5 194.5 L421.9 217 L429.4 250.3 L400 232.8 L370.6 250.3 L378.1 217 L352.5 194.5 L386.4 191.3 Z" fill="url(#gStar)" stroke="url(#gStar)" stroke-width="8" stroke-linejoin="round"/>
+<!-- the family: four dots -->
+<circle cx="182" cy="542" r="27" fill="#1E88E5"/>
+<circle cx="290" cy="520" r="27" fill="#2EB872"/>
+<circle cx="398" cy="520" r="27" fill="#FFB300"/>
+<circle cx="470" cy="520" r="27" fill="#F4511E"/>
+</g>
+</svg>

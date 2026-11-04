@@ -1,0 +1,54 @@
+/* UX tidy-up: cal */
+
+/* View switch: Week / Month / List / Plans & ideas, full width so it fits a 360px phone. */
+.cal-views { margin: 2px 0 0; }
+.cal-views .seg { display: flex; width: 100%; }
+.cal-views .seg-btn { flex: 1 1 auto; padding: 8px 6px; font-size: 14px; min-height: 36px; }
+
+/* Day nav on the left, filter chip on the right. */
+.cal-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0; min-width: 0; }
+.cal-bar .nav-arrows { flex: none; }
+.chip.cal-filter { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 55%; margin: 0; }
+.chip.cal-filter svg { flex: none; }
+.cal-filter .cf-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cal-filter-foot { display: flex; gap: 8px; margin-top: 14px; }
+
+/* Section heading whose help text folds into an ⓘ beside the title. */
+.sec-help { display: flex; flex-wrap: wrap; align-items: center; gap: 0 2px; flex: 1; min-width: 0; }
+.sec-help > .help-once { flex-basis: 100%; margin: 6px 0 2px; }
+.sec-help > .help-i { padding: 4px 6px; }
+.sec-head.help-head.day { margin: 14px 0 0; }
+.sec-head.help-head.day h2.day-title { margin: 0; }
+
+/* Day lanes: "Everyone else is free" line. */
+.lanes-free { display: flex; align-items: center; gap: 8px; margin: 6px 0 2px; font-size: 13px; color: var(--muted); }
+.lanes-free.solo { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 8px 10px; margin: 0 0 12px; }
+
+/* Plans & ideas: one compact row per idea. */
+.idea-list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+.idea-row { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; min-width: 0; }
+.idea-row.leading { border-color: rgba(61, 220, 151, 0.55); }
+.ir-line { display: flex; align-items: center; gap: 4px; padding-right: 6px; min-width: 0; }
+.ir-main { appearance: none; background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 8px 4px 8px 10px; min-height: 52px; }
+.ir-emoji { font-size: 24px; line-height: 1; flex: none; width: 28px; text-align: center; }
+.ir-text { display: grid; min-width: 0; }
+.ir-text strong, .ir-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ir-text small { color: var(--muted); font-size: 12px; }
+.ir-lead { color: var(--good); font-weight: 700; margin-right: 6px; }
+.ir-votes { display: flex; gap: 4px; flex: none; }
+.vote-ico { appearance: none; width: 36px; height: 36px; padding: 0; border-radius: 10px; border: 2px solid var(--line); background: var(--surface2); font-size: 16px; line-height: 1; display: grid; place-items: center; cursor: pointer; color: var(--text); }
+.vote-ico.on.v-yes { border-color: var(--good); background: var(--good-bg); }
+.vote-ico.on.v-maybe { border-color: var(--warn); background: rgba(255, 169, 77, 0.14); }
+.vote-ico.on.v-no { border-color: var(--bad); background: var(--bad-bg); }
+.ir-more { border-top: 1px solid var(--line); padding: 4px 12px 12px; }
+.ir-more > p { margin: 8px 0; }
+.ir-more .voters { margin: 4px 0; }
+.ir-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.free-more { margin-top: 6px; }
+.free-slot span { white-space: nowrap; }
+
+@media (max-width: 370px) {
+  .cal-views .seg-btn { padding: 8px 4px; font-size: 13px; }
+  .vote-ico { width: 34px; height: 34px; }
+  .ir-main { gap: 8px; padding-left: 8px; }
+}
