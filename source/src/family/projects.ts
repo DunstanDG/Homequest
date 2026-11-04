@@ -56,6 +56,10 @@ export function activityTicked(f: FamilyState, a: Pick<ActivityEvent, 'activityI
   for (const e of f.activityTicks[a.activityId] ?? []) if (!f.voided[e.id] && (!last || e.ts >= last.ts)) last = { ts: e.ts, done: e.done }
   const inSession = activitiesDoneBySessions(f).get(a.activityId) ?? 0
   if (inSession && inSession > (last?.ts ?? 0)) return true
+  // A "Plan a thing" step also lives as a task on someone's day: ticking that counts too (see planThing.ts).
+  const task = f.tasks[`plan-${a.activityId}`]
+  const td = task && !task.deleted ? f.done[`${task.taskId}|${task.date ?? 'any'}`] : undefined
+  if (td && td.status !== 'rejected' && td.ts > (last?.ts ?? 0)) return true
   return last?.done ?? false
 }
 
@@ -104,7 +108,7 @@ export interface ProjectTree {
   minutesLeft: number
 }
 
-const treeCache = new WeakMap<object, Map<string, { runs: object; voided: object; ticks: object; tree: ProjectTree }>>()
+const treeCache = new WeakMap<object, Map<string, { runs: object; voided: object; ticks: object; tasks: object; taskDone: object; tree: ProjectTree }>>()
 
 /** The project's activities, worked out once per change. Activities whose parent has gone are left out. */
 export function projectTree(f: FamilyState, projectId: string): ProjectTree | undefined {
@@ -112,7 +116,7 @@ export function projectTree(f: FamilyState, projectId: string): ProjectTree | un
   if (!project || project.deleted) return undefined
   let per = treeCache.get(f.activities)
   const hit = per?.get(projectId)
-  if (hit && hit.runs === f.runs && hit.voided === f.voided && hit.ticks === f.activityTicks && hit.tree.project === project) return hit.tree
+  if (hit && hit.runs === f.runs && hit.voided === f.voided && hit.ticks === f.activityTicks && hit.tasks === f.tasks && hit.taskDone === f.done && hit.tree.project === project) return hit.tree
 
   const all = Object.values(f.activities).filter((a) => a.projectId === projectId && !a.deleted)
   const byParent = new Map<string, ActivityEvent[]>()
@@ -165,7 +169,7 @@ export function projectTree(f: FamilyState, projectId: string): ProjectTree | un
     minutesLeft: roots.reduce((s, a) => s + (info.get(a.activityId)?.minutesLeft ?? 0), 0),
   }
   if (!per) treeCache.set(f.activities, (per = new Map()))
-  per.set(projectId, { runs: f.runs, voided: f.voided, ticks: f.activityTicks, tree })
+  per.set(projectId, { runs: f.runs, voided: f.voided, ticks: f.activityTicks, tasks: f.tasks, taskDone: f.done, tree })
   return tree
 }
 

@@ -9,8 +9,10 @@ import { PrivateKeys } from '@/screens/family/PrivateKeys'
 import { addDays, fmtDuration, friendlyDay, ymdOf } from '@/family/dates'
 import { areasOf, dumpList, dumpMeta, dumpState, dumpTotals, parseDump } from '@/family/dump'
 import { liveRoutines } from '@/family/routines'
+import { PEEK, PICK_LIMIT, pickToWeek, pickView, pickWindow, splitSomeday } from '@/family/planDump'
 import type { DumpEvent, DumpPriority, MemberId, Ymd } from '@/family/types'
 import { Avatar, CheckCircle, MemberChips, Seg } from '@/ui/fam'
+import { useNow } from '@/app/context'
 import { Icon } from '@/ui/icons'
 import { Sheet } from '@/ui/primitives'
 import { cancelTaskReminder, usePeople } from '@/screens/family/shared'
@@ -34,12 +36,33 @@ export function Dump() {
   const [privNew, setPrivNew] = useState(false)
   const [keys, setKeys] = useState(false)
   const privacy = usePrivacy()
+  const now = useNow(60_000)
+  const [mode, setModeState] = useState<'pick' | 'all'>(() => {
+    try {
+      return localStorage.getItem('hq.dump.mode') === 'all' ? 'all' : 'pick'
+    } catch {
+      return 'pick'
+    }
+  })
+  const setMode = (m: 'pick' | 'all') => {
+    setModeState(m)
+    try {
+      localStorage.setItem('hq.dump.mode', m)
+    } catch {
+      /* fine */
+    }
+  }
+  const [showAllItems, setShowAllItems] = useState(false)
 
   const items = dumpList(f, { area: area || undefined, ownerId: mineOnly ? me.id : undefined, q })
   const finished = dumpList(f, { show: 'done' })
     .sort((a, b) => b.ts - a.ts)
     .slice(0, 30)
   const areas = areasOf(f)
+  const filtered = !!(q || area || mineOnly)
+  // Untouched for a month: rests under "Someday" (a view rule, nothing nags). Searching or filtering shows everything.
+  const split = useMemo(() => (filtered ? { active: items, someday: [] as DumpEvent[] } : splitSomeday(f, items, now)), [f, items, filtered, now])
+  const shown = filtered || showAllItems ? split.active : split.active.slice(0, PEEK)
   const totals = useMemo(() => dumpTotals(f, items), [f, items])
   const parsed = useMemo(() => parseDump(text, people), [text, people])
   const opened = open ? f.dump[open] : undefined
@@ -77,6 +100,16 @@ export function Dump() {
   return (
     <>
       <HelpHead title="Brain dump" helpId="plan.dump" help="Write it all down, one per line. Sort it out later. Mark things private and nobody else sees them." />
+      <div className="dump-mode">
+        <Seg<'pick' | 'all'>
+          value={mode}
+          onChange={setMode}
+          options={[
+            { id: 'pick', label: 'Pick 3 for this week' },
+            { id: 'all', label: 'Everything' },
+          ]}
+        />
+      </div>
 
       <div className="card dump-capture">
         <textarea
@@ -119,6 +152,8 @@ export function Dump() {
         </button>
       </div>
 
+      {mode === 'pick' ? <PickThree items={items} /> : (
+      <>
       <div className="chips scroll-chips" role="group" aria-label="Lists">
         <button type="button" className={`chip small${!area ? ' selected' : ''}`} onClick={() => setArea('')}>
           Everything
@@ -159,7 +194,7 @@ export function Dump() {
       )}
 
       <ul className="dump-list">
-        {items.map((d) => {
+        {shown.map((d) => {
           const st = dumpState(f, d)
           const task = d.taskId ? f.tasks[d.taskId] : undefined
           const on = picked.includes(d.itemId)
@@ -192,6 +227,27 @@ export function Dump() {
         })}
       </ul>
 
+      {!filtered && split.active.length > PEEK && (
+        <button type="button" className="link-btn wide" onClick={() => setShowAllItems(!showAllItems)}>
+          {showAllItems ? 'Show fewer' : `Show all (${split.active.length})`}
+        </button>
+      )}
+      {split.someday.length > 0 && (
+        <details className="later-fold">
+          <summary>Someday ({split.someday.length})</summary>
+          <ul className="dump-list">
+            {split.someday.map((d) => (
+              <li key={d.itemId} className="dump-row someday">
+                <button type="button" className="dump-main" onClick={() => setOpen(d.itemId)}>
+                  <strong>{d.title}</strong>
+                  <small className="muted">{dumpMeta(d, f.members) || ' '}</small>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
       {selecting && (
         <div className="select-bar">
           <span>{picked.length} selected</span>
@@ -222,6 +278,9 @@ export function Dump() {
             </ul>
           )}
         </>
+      )}
+
+      </>
       )}
 
       {opened && <ItemSheet key={opened.itemId} item={opened} onClose={() => setOpen(undefined)} onKeys={() => setKeys(true)} />}
@@ -482,5 +541,122 @@ function MakeSession({ items, onClose, onMade }: { items: DumpEvent[]; onClose: 
         Save for later
       </button>
     </Sheet>
+  )
+}
+
+
+/** "Pick 3 for this week": a few things to choose from, each put on a day, and the rest resting under "Saved for later". */
+function PickThree({ items }: { items: DumpEvent[] }) {
+  const { act, toast } = useApp()
+  const f = useFamily()
+  const me = useMe()!
+  const now = useNow(60_000)
+  const today = ymdOf(now)
+  const days = pickWindow(today)
+  const [showAll, setShowAll] = useState(false)
+  const [sel, setSel] = useState<Record<string, Ymd>>({})
+  const v = pickView(f, items, now, today, showAll)
+  const chosen = Object.keys(sel)
+  const full = chosen.length >= v.slotsLeft
+  const toggle = (id: string) =>
+    setSel((s) => {
+      const n = { ...s }
+      if (n[id]) delete n[id]
+      else if (Object.keys(n).length < v.slotsLeft) n[id] = days.length > 1 ? days[1]! : days[0]!
+      return n
+    })
+  const commit = () => {
+    const picks = chosen.map((id) => ({ item: f.dump[id]!, date: sel[id]! })).filter((p) => p.item)
+    act(pickToWeek(me.id, f, picks, { today, items, assignee: me.id }))
+    toast(picks.length === 1 ? 'Lovely. That one is on your week.' : `Lovely. ${picks.length} things are on your week.`)
+    setSel({})
+  }
+  const dayLabel = (d: Ymd) => friendlyDay(d, today)
+  return (
+    <>
+      <section className="card pick-card">
+        <h2>This week</h2>
+        {v.picked.length === 0 ? (
+          <p className="muted small">Nothing chosen yet. Pick up to {PICK_LIMIT}, and let the rest wait.</p>
+        ) : (
+          <ul className="pk-list">
+            {v.picked.map((d) => {
+              const t = d.taskId ? f.tasks[d.taskId] : undefined
+              const done = dumpState(f, d) === 'done'
+              return (
+                <li key={d.itemId} className="pick-row-btn">
+                  <Icon name={done ? 'check' : 'calendar'} size={18} />
+                  <span className="grow">
+                    {d.title}
+                    <small className="muted pick-meta">{done ? 'Done' : t?.date ? dayLabel(t.date) : ''}</small>
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+        {v.slotsLeft === 0 && <p className="note">That is your week. Everything else can wait, safe and sound.</p>}
+      </section>
+
+      {v.slotsLeft > 0 && (
+        <section className="card pick-card">
+          <h2>{v.picked.length ? `Room for ${v.slotsLeft} more` : `Want to pick ${PICK_LIMIT}?`}</h2>
+          {v.choices.length === 0 && <p className="muted small">Nothing waiting. Type things above whenever they pop into your head.</p>}
+          <ul className="pk-list">
+            {v.choices.map((d) => {
+              const on = !!sel[d.itemId]
+              return (
+                <li key={d.itemId}>
+                  <button type="button" className={`pick-row-btn${on ? ' on' : ''}`} aria-pressed={on} disabled={!on && full} onClick={() => toggle(d.itemId)}>
+                    <span className={`check-circle${on ? ' done' : ''}`} aria-hidden>{on && <Icon name="check" size={18} />}</span>
+                    <span className="grow">
+                      {d.priv ? '🔒 ' : ''}
+                      {d.title}
+                      <small className="muted pick-meta">{dumpMeta(d, f.members)}</small>
+                    </span>
+                  </button>
+                  {on && (
+                    <div className="pick-days" role="group" aria-label={`Day for ${d.title}`}>
+                      {days.map((day) => (
+                        <button key={day} type="button" className={`chip small${sel[d.itemId] === day ? ' selected' : ''}`} onClick={() => setSel((s) => ({ ...s, [d.itemId]: day }))}>
+                          {dayLabel(day)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+          {v.moreChoices > 0 && (
+            <button type="button" className="link-btn wide" onClick={() => setShowAll(true)}>
+              Show all ({v.choices.length + v.moreChoices})
+            </button>
+          )}
+          {showAll && (
+            <button type="button" className="link-btn wide" onClick={() => setShowAll(false)}>
+              Show fewer
+            </button>
+          )}
+          <button type="button" className="btn primary block" disabled={!chosen.length} onClick={commit}>
+            {chosen.length ? `Put ${chosen.length === 1 ? 'it' : `these ${chosen.length}`} on my week` : 'Choose what feels doable'}
+          </button>
+        </section>
+      )}
+
+      {v.later.length > 0 && (
+        <details className="later-fold">
+          <summary>Saved for later ({v.later.length})</summary>
+          <p className="note">These are safe here. They’ll come back when you want them.</p>
+          <ul className="pk-list">
+            {v.later.map((d) => (
+              <li key={d.itemId} className="pick-row-btn">
+                <span className="grow">{d.title}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </>
   )
 }

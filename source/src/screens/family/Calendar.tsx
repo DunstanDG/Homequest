@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useCalCtx, useCoparentSync, useFamily } from '@/app/context'
 import { itemsOn, type AgendaItem } from '@/family/calendar'
 import { addDays, addMonths, dayName, dayRange, endOfMonth, friendlyDay, longDay, startOfMonth, startOfWeek, weekday } from '@/family/dates'
@@ -169,9 +169,14 @@ export function Calendar() {
                 <Icon name="plus" size={16} /> Idea
               </button>
             ) : (
-              <button type="button" className="btn small" onClick={() => setEdit({ date: sel })}>
-                <Icon name="plus" size={16} /> Event
-              </button>
+              <>
+                <Link to="/plan/new-thing" className="btn small ghost" aria-label="Plan a thing">
+                  Plan a thing
+                </Link>
+                <button type="button" className="btn small" onClick={() => setEdit({ date: sel })}>
+                  <Icon name="plus" size={16} /> Event
+                </button>
+              </>
             )}
           </>
         }

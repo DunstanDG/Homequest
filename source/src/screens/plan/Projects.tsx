@@ -6,7 +6,9 @@ import { useApp, useFamily, useMe } from '@/app/context'
 import { breakdownAvailable, deviceKey, deviceModel, requestBreakdown, setDeviceKey, setDeviceModel, type BreakdownInput } from '@/app/breakdown'
 import { DEFAULT_MODEL } from '../../../supabase/functions/_shared/breakdown'
 import * as PA from '@/family/projectActions'
-import { liveProjects, pathTo, projectTree, readySteps, type ProjectTree } from '@/family/projects'
+import { liveProjects, pathTo, projectTree, readySteps, stepForActivity, type ProjectTree } from '@/family/projects'
+import * as P from '@/family/planActions'
+import { activeRunFor, minLabel } from '@/family/routines'
 import { fmtDuration } from '@/family/dates'
 import type { ActivityEvent, FamilyState, Member, ProjectEvent, ProjectSkill } from '@/family/types'
 import { Avatar, MemberChips } from '@/ui/fam'
@@ -71,31 +73,62 @@ export function Projects() {
   )
 }
 
+/** Start just one step as a short session (the run screen), or carry on with the one already running. */
+export function useStartStep() {
+  const nav = useNavigate()
+  const { act, toast } = useApp()
+  const f = useFamily()
+  const me = useMe()!
+  return (t: ProjectTree, a: ActivityEvent) => {
+    const live = activeRunFor(f, me.id, Date.now())
+    if (live) {
+      toast('You already have a session going. Let’s carry on with that one.')
+      return nav(`/run/${live.id}`)
+    }
+    const { runId, events } = P.startRun(me.id, me.id, { title: t.project.title, emoji: t.project.emoji ?? '🎯', steps: [stepForActivity(a)] }, Date.now())
+    act(events)
+    nav(`/run/${runId}`)
+  }
+}
+
 function ProjectCard({ p, f, onOpen }: { p: ProjectEvent; f: FamilyState; onOpen: () => void }) {
   const t = projectTree(f, p.projectId)
   const owner = p.ownerId ? f.members[p.ownerId] : undefined
   const next = t ? readySteps(t, f)[0] : undefined
+  const start = useStartStep()
   return (
-    <button type="button" className="card project-card pick-row" onClick={onOpen}>
-      <span className="plan-emoji">{p.emoji ?? '🎯'}</span>
-      <div className="grow">
-        <strong>{p.title}</strong>
-        {t && t.stepsTotal > 0 ? (
-          <>
-            <p className="muted small">
-              {p.status === 'done' ? 'Finished · ' : ''}
-              {t.stepsDone} of {t.stepsTotal} steps done{t.minutesLeft ? ` · ${fmtDuration(t.minutesLeft)} to go` : ''}
-            </p>
-            <Bar value={t.stepsDone / t.stepsTotal} tone={t.stepsDone === t.stepsTotal ? 'good' : 'accent'} />
-            {next && p.status !== 'done' && <p className="small project-next">Next: {next.title}</p>}
-          </>
-        ) : (
-          <p className="muted small">Not broken down yet</p>
-        )}
-      </div>
-      {owner && <Avatar m={owner} size={28} />}
-      <Icon name="chevron" size={18} />
-    </button>
+    <div className="card project-card">
+      <button type="button" className="project-card-open pick-row" onClick={onOpen} aria-label={`Open ${p.title}`}>
+        <span className="plan-emoji">{p.emoji ?? '🎯'}</span>
+        <div className="grow">
+          <strong>{p.title}</strong>
+          {t && t.stepsTotal > 0 ? (
+            <>
+              {next && p.status !== 'done' ? (
+                <p className="small project-next">
+                  Next: {next.title} <span className="muted">(~{minLabel(next.minutes)})</span>
+                </p>
+              ) : (
+                <p className="muted small">{p.status === 'done' || t.stepsDone === t.stepsTotal ? 'All steps done. Lovely.' : 'Waiting on an earlier step'}</p>
+              )}
+              <Bar value={t.stepsDone / t.stepsTotal} tone={t.stepsDone === t.stepsTotal ? 'good' : 'accent'} />
+              <p className="muted small">
+                {t.stepsDone} of {t.stepsTotal} steps done
+              </p>
+            </>
+          ) : (
+            <p className="muted small">Not broken down yet</p>
+          )}
+        </div>
+        {owner && <Avatar m={owner} size={28} />}
+        <Icon name="chevron" size={18} />
+      </button>
+      {t && next && p.status !== 'done' && (
+        <button type="button" className="btn small primary" onClick={() => start(t, next)}>
+          <Icon name="play" size={16} /> Start
+        </button>
+      )}
+    </div>
   )
 }
 
