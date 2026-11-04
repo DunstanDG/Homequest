@@ -1,10 +1,10 @@
 /**
  * The weekly round table (0.14): everyone raises things beforehand, the family assistant goes through the coming week
- * and posts a short agenda with suggested fixes, and the family talks it over (parents can then go through the
- * weekly summit). See src/family/travel/roundTable.ts and the home server's weekly.py.
+ * and posts a short agenda with suggested fixes, and the family talks it over. See src/family/travel/roundTable.ts and
+ * the home server's weekly.py. Since 0.18 these pieces are steps of the weekly plan (/week, WeekPlan.tsx), and
+ * /round-table goes there.
  */
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useApp, useFamily, useMe, useNow, useSyncStatus } from '@/app/context'
 import { askGeminiForRoundTable } from '@/app/roundTableGemini'
 import { hmOf, ymdOf } from '@/family/dates'
@@ -18,7 +18,7 @@ import { ProposalCard } from './Assistant'
 
 const hours = (min: number) => (min >= 60 ? `${Math.floor(min / 60)}h${min % 60 ? ` ${min % 60}m` : ''}` : `${min} min`)
 
-function Agenda({ rt }: { rt: RoundTableEvent }) {
+export function Agenda({ rt }: { rt: RoundTableEvent }) {
   const f = useFamily()
   const a = rt.agenda!
   const props = a.proposals.map((id) => f.travel.proposals[id]).filter((p): p is NonNullable<typeof p> => !!p)
@@ -49,7 +49,8 @@ function Agenda({ rt }: { rt: RoundTableEvent }) {
   )
 }
 
-function Raise({ weekOf }: { weekOf: string }) {
+/** Things to raise for the round table (anyone can add one). `bare` leaves out the heading, for a step that has its own. */
+export function Raise({ weekOf, bare }: { weekOf: string; bare?: boolean }) {
   const f = useFamily()
   const me = useMe()!
   const { act, toast } = useApp()
@@ -59,11 +60,11 @@ function Raise({ weekOf }: { weekOf: string }) {
     if (!text.trim()) return
     act(T.addRoundTableNote(me.id, weekOf, text))
     setText('')
-    toast('Added for the round table.')
+    toast('Added. Thanks for raising it.')
   }
   return (
     <>
-      <SectionHead title="Things to raise" sub="Anyone can add something: a trip, a worry, a job to share out." />
+      {bare ? <p className="note">Anyone can add something: a trip, a worry, a job to share out.</p> : <SectionHead title="Things to raise" sub="Anyone can add something: a trip, a worry, a job to share out." />}
       {notes.length > 0 && (
         <ul className="rt-notes">
           {notes.map((n) => (
@@ -90,7 +91,7 @@ function Raise({ weekOf }: { weekOf: string }) {
   )
 }
 
-function Week({ rt }: { rt: RoundTableEvent }) {
+export function Week({ rt }: { rt: RoundTableEvent }) {
   const [open, setOpen] = useState<string>()
   const fx = rt.facts
   return (
@@ -148,7 +149,8 @@ function Week({ rt }: { rt: RoundTableEvent }) {
   )
 }
 
-function Settings() {
+/** When the round table happens, and who writes the agenda (parents). */
+export function RoundTableSettings() {
   const f = useFamily()
   const me = useMe()!
   const { act, toast } = useApp()
@@ -208,7 +210,7 @@ function Settings() {
 }
 
 /** Waiting with Gemini chosen: normally done within a minute by the database trigger; a parent can also ask now. */
-function GeminiWaiting({ rt }: { rt: RoundTableEvent }) {
+export function GeminiWaiting({ rt }: { rt: RoundTableEvent }) {
   const me = useMe()!
   const { demo } = useApp()
   const sync = useSyncStatus()
@@ -244,52 +246,34 @@ function GeminiWaiting({ rt }: { rt: RoundTableEvent }) {
   )
 }
 
-export function RoundTable() {
+/** Where this week's round table is up to (only with the home server): when it happens, the assistant or Gemini
+ * working on it, or its agenda. Nothing at all when there's no home server. */
+export function RoundTableStatus() {
   const f = useFamily()
   const me = useMe()!
-  const nav = useNavigate()
   const now = useNow(30_000)
   const today = ymdOf(now)
+  if (!serverOn(f)) return null
   const s = rtSettingsOf(f)
-  const { weekOf } = scheduleFor(today, s)
   const rt = currentRoundTable(f, today)
   const phase = phaseOf(f, today, hmOf(now))
-  const notesWeek = rt?.weekOf ?? weekOf
   return (
-    <div className="screen round-table">
-      <header className="screen-head">
-        <button type="button" className="icon-btn" aria-label="Back" onClick={() => nav(-1)}>
-          <Icon name="back" />
-        </button>
-        <div className="sh-title">
-          <p className="eyebrow">Week ahead</p>
-          <h1>Round table</h1>
-        </div>
-      </header>
-      {!serverOn(f) ? (
-        <p className="note">The round table is run by the family assistant on the home server, which isn’t set up yet.</p>
-      ) : (
-        <>
-          {phase === 'off' && !rt && <p className="note">The round table is turned off.{me.role === 'parent' ? ' Turn it on below.' : ''}</p>}
-          {(phase === 'later' || phase === 'raise') && !rt && (
-            <p className="note">
-              Next round table: <strong>{whenText(s)}</strong>. The assistant goes through the week, suggests fixes and lets everyone know when it’s ready.
-            </p>
-          )}
-          {rt?.status === 'waiting' && (s.engine === 'gemini' ? <GeminiWaiting rt={rt} /> : <p className="note">⏳ The assistant is going through the week now. It takes a few minutes; everyone gets a notification when it’s ready.</p>)}
-          {rt?.status === 'ready' && rt.agenda && <Agenda rt={rt} />}
-          <Raise weekOf={notesWeek} />
-          {rt && <Week rt={rt} />}
-          {me.role === 'parent' && (
-            <>
-              <button type="button" className="btn block" onClick={() => nav('/summit')}>
-                Then go through the weekly summit
-              </button>
-              <Settings />
-            </>
-          )}
-        </>
+    <>
+      {phase === 'off' && !rt && <p className="note">The round table is turned off.{me.role === 'parent' ? ' It can be turned on in the last step.' : ''}</p>}
+      {(phase === 'later' || phase === 'raise') && !rt && (
+        <p className="note">
+          Next round table: <strong>{whenText(s)}</strong>. The assistant goes through the week, suggests fixes and lets everyone know when it’s ready.
+        </p>
       )}
-    </div>
+      {rt?.status === 'waiting' && (s.engine === 'gemini' ? <GeminiWaiting rt={rt} /> : <p className="note">⏳ The assistant is going through the week now. It takes a few minutes; everyone gets a notification when it’s ready.</p>)}
+      {rt?.status === 'ready' && rt.agenda && <Agenda rt={rt} />}
+    </>
   )
+}
+
+/** The week the round table's notes are for (the one its agenda covers, or the next one it will run for). */
+export function useRoundTableWeek(): string {
+  const f = useFamily()
+  const today = ymdOf(useNow(60_000))
+  return currentRoundTable(f, today)?.weekOf ?? scheduleFor(today, rtSettingsOf(f)).weekOf
 }

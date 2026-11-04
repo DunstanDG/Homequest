@@ -59,6 +59,7 @@ export function emptyFamily(): FamilyState {
     weekFix: {},
     comments: {},
     summits: {},
+    weekFocus: {},
     dumpPromptSettings: {},
     triviaDone: {},
     goals: {},
@@ -247,6 +248,8 @@ export function applyFamilyEvent(prev: FamilyState, ev: AppEvent): FamilyState {
       return { ...prev, eventCount: prev.eventCount + 1, comments: { ...prev.comments, [ev.commentId]: ev } }
     case 'summit':
       return { ...prev, eventCount: prev.eventCount + 1, summits: { ...prev.summits, [ev.weekKey]: ev } }
+    case 'week-focus':
+      return { ...prev, eventCount: prev.eventCount + 1, weekFocus: { ...prev.weekFocus, [ev.weekOf]: ev } }
     case 'dump-prompt-setting':
       return { ...prev, eventCount: prev.eventCount + 1, dumpPromptSettings: { ...prev.dumpPromptSettings, [ev.memberId]: ev } }
     case 'habit':

@@ -17,8 +17,8 @@ import { Parent } from '@/screens/parent'
 import { Calendar } from '@/screens/family/Calendar'
 import { Baby } from '@/screens/family/Baby'
 import { Care } from '@/screens/family/Care'
-import { Summit } from '@/screens/family/Summit'
-import { RoundTable } from '@/screens/family/RoundTable'
+import { WeekPlan } from '@/screens/family/WeekPlan'
+import { SettingsHub } from '@/screens/settings/SettingsHub'
 import { Vault } from '@/screens/family/Vault'
 import { School } from '@/screens/family/School'
 import { Travel } from '@/screens/family/Travel'
@@ -90,8 +90,9 @@ function Shell({ newPerson }: { newPerson: boolean }) {
             <Route path="/together" element={<Navigate to="/calendar?v=plans" replace />} />
             <Route path="/care" element={<Care />} />
             <Route path="/vault" element={<Vault />} />
-            <Route path="/summit" element={<Summit />} />
-            <Route path="/round-table" element={<RoundTable />} />
+            <Route path="/week" element={<WeekPlan />} />
+            <Route path="/summit" element={<Navigate to="/week" replace />} />
+            <Route path="/round-table" element={<Navigate to="/week" replace />} />
             <Route path="/baby" element={<Baby />} />
             <Route path="/school" element={<School />} />
             <Route path="/travel" element={<Travel />} />
@@ -108,6 +109,7 @@ function Shell({ newPerson }: { newPerson: boolean }) {
             <Route path="/play/:gameId" element={<LearnPlay />} />
             <Route path="/parent" element={<Parent />} />
             <Route path="/more" element={<More />} />
+            <Route path="/settings" element={<SettingsHub />} />
             {import.meta.env.DEV && <Route path="/dev" element={<Gallery />} />}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -6,29 +6,29 @@ import { SyncDot } from '@/ui/ux'
 import { Dump } from './Dump'
 import { Meals } from './Meals'
 import { Projects } from './Projects'
-import { Sessions } from './Sessions'
+import { Routines } from './Routines'
 import { Shopping } from './Shopping'
 
-type Tab = 'sessions' | 'projects' | 'dump' | 'meals' | 'shop'
-const TABS: Tab[] = ['sessions', 'projects', 'dump', 'meals', 'shop']
+type Tab = 'routines' | 'projects' | 'dump' | 'meals' | 'shop'
+const TABS: Tab[] = ['routines', 'projects', 'dump', 'meals', 'shop']
+
+/** Old links and remembered tabs said 'sessions'; that is Routines now. */
+const tabOf = (t: string | null): Tab | undefined => (t === 'sessions' ? 'routines' : t && (TABS as string[]).includes(t) ? (t as Tab) : undefined)
 
 const remembered = (): Tab => {
   try {
-    const t = localStorage.getItem('hq.plan.tab') as Tab | null
-    if (t && TABS.includes(t)) return t
+    return tabOf(localStorage.getItem('hq.plan.tab')) ?? 'routines'
   } catch {
-    /* fine */
+    return 'routines'
   }
-  return 'sessions'
 }
 
-/** Plan: sessions to work through, projects (big goals broken into steps), a brain dump for things to sort out later, the week's meals, and the shopping list. */
+/** Plan: routines (with clean-ups and focus sessions), projects (big goals broken into steps), a brain dump for things to sort out later, the week's meals, and the shopping list. Always in that order. */
 export function Plan() {
   const f = useFamily()
   const me = useMe()!
   const [params, setParams] = useSearchParams()
-  const asked = params.get('t') as Tab | null
-  const tab: Tab = asked && TABS.includes(asked) ? asked : remembered()
+  const tab: Tab = tabOf(params.get('t')) ?? remembered()
   const weekStart = startOfWeek(ymdOf(Date.now()))
   const summitDone = !!f.summits[weekStart]
   // Same rule as Today's "Needs you": nudge from Friday, when the week ahead is worth planning.
@@ -66,7 +66,7 @@ export function Plan() {
             <Icon name="plus" size={16} /> Plan a thing
           </Link>
           {me.role === 'parent' && (
-            <Link to="/summit" className={`btn small${summitNudge ? ' primary' : ' ghost'} summit-label`} aria-label={summitDone ? 'Weekly summit (done this week)' : 'Weekly summit: plan the week ahead'}>
+            <Link to="/week" className={`btn small${summitNudge ? ' primary' : ' ghost'} summit-label`} aria-label={summitDone ? 'Weekly plan (done this week)' : 'Weekly plan: plan the week ahead'}>
               <Icon name="compass" size={16} /> {summitDone ? 'Week planned' : 'Plan the week'}
             </Link>
           )}
@@ -75,7 +75,7 @@ export function Plan() {
       </header>
       <nav className="plan-tabs" aria-label="Plan sections">
         {group('Do', [
-          { id: 'sessions', label: 'Clean-ups' },
+          { id: 'routines', label: 'Routines' },
           { id: 'projects', label: 'Projects' },
           { id: 'dump', label: 'Brain dump' },
         ])}
@@ -85,7 +85,7 @@ export function Plan() {
         ])}
       </nav>
       <div className="plan-body">
-        {tab === 'sessions' && <Sessions />}
+        {tab === 'routines' && <Routines />}
         {tab === 'projects' && <Projects />}
         {tab === 'dump' && <Dump />}
         {tab === 'meals' && <Meals />}

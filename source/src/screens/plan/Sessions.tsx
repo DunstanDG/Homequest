@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { HelpHead } from '@/ui/ux'
-import { HouseSessions } from '@/screens/house/HouseSessions'
 import { useNavigate } from 'react-router-dom'
 import * as A from '@/family/actions'
 import * as P from '@/family/planActions'
@@ -24,14 +23,34 @@ import {
   runOf,
 } from '@/family/routines'
 import type { DayPart, Member, MemberId, RoutineEvent, RoutineStep, Ymd } from '@/family/types'
-import { Avatar, MemberChips } from '@/ui/fam'
+import { Avatar, MemberChips, Seg } from '@/ui/fam'
+import { routineKindOf, sortForKind, type RoutineKind } from '@/family/routineKind'
 import { Icon } from '@/ui/icons'
 import { Sheet } from '@/ui/primitives'
 import { fmtClock } from '@/family/timers'
 import { RepeatPicker, initialRepeat, repeatToRecur, usePeople, type RepeatState } from '@/screens/family/shared'
 
-/** Sessions: saved lists of steps you work through in order against the clock (a morning routine, a tidy, admin hour). */
-export function Sessions() {
+const KIND_TEXT: Record<RoutineKind, { title: string; help: string; none: string; noneSub: string; placeholder: string }> = {
+  routine: {
+    title: 'Routines',
+    help: 'The same steps at the same time of day, with the clock running: getting up, bedtime, before you leave.',
+    none: 'No routines yet',
+    noneSub: 'Start from a ready-made one (morning, bedtime, before you leave) and change it to suit, or build your own.',
+    placeholder: 'e.g. Morning routine',
+  },
+  focus: {
+    title: 'Focus sessions',
+    help: 'A block of work with the clock running, one step at a time: an admin hour, a 20-minute tidy, homework.',
+    none: 'No focus sessions yet',
+    noneSub: 'Start from a ready-made one and change it to suit, or build your own. You can also make one from things in your Brain dump.',
+    placeholder: 'e.g. Admin hour',
+  },
+}
+
+/** Sessions: saved lists of steps you work through in order against the clock. Plan › Routines shows them in two
+ * sub-tabs, routines (morning, bedtime, before you leave) and focus sessions (an admin hour, a tidy); `kind` picks
+ * which. The family clean-ups are the third sub-tab (screens/house/HouseSessions). */
+export function Sessions({ kind = 'routine' }: { kind?: RoutineKind }) {
   const nav = useNavigate()
   const { act, toast } = useApp()
   const f = useFamily()
@@ -39,7 +58,12 @@ export function Sessions() {
   const now = useNow(30_000)
   const today = ymdOf(now)
   // A project's planned sessions are listed in the project (and show on their day), not here.
-  const routines = liveRoutines(f).filter((r) => !r.project)
+  const routines = sortForKind(
+    liveRoutines(f).filter((r) => !r.project && routineKindOf(r) === kind),
+    kind,
+  )
+  const text = KIND_TEXT[kind]
+  const templates = SESSION_TEMPLATES.filter((t) => routineKindOf(t) === kind)
   const active = activeRunFor(f, me.id, now)
   const [picking, setPicking] = useState(false)
   const [edit, setEdit] = useState<{ routine?: RoutineEvent; template?: SessionTemplate } | undefined>()
@@ -58,12 +82,10 @@ export function Sessions() {
 
   return (
     <>
-      {active && <ActiveBanner runId={active.id} />}
-
-      <HouseSessions />
-
       <HelpHead
-        title="Sessions" helpId="plan.sessions" help="A list of steps to work through in order, with the clock running: a morning routine, a tidy, an admin hour."
+        title={text.title}
+        helpId={`plan.sessions.${kind}`}
+        help={text.help}
         action={
           <button type="button" className="btn small" onClick={() => setPicking(true)}>
             <Icon name="plus" size={16} /> New
@@ -75,8 +97,8 @@ export function Sessions() {
         <div className="card callout">
           <Icon name="timer" size={26} />
           <div>
-            <h3>No sessions yet</h3>
-            <p className="muted">Start from a ready-made one and change it to suit, or build your own. You can also make one from things in your Brain dump.</p>
+            <h3>{text.none}</h3>
+            <p className="muted">{text.noneSub}</p>
             <button type="button" className="btn primary small" onClick={() => setPicking(true)}>
               Choose one
             </button>
@@ -98,7 +120,7 @@ export function Sessions() {
         />
       ))}
 
-      <Sheet open={picking} onClose={() => setPicking(false)} title="New session">
+      <Sheet open={picking} onClose={() => setPicking(false)} title={kind === 'routine' ? 'New routine' : 'New focus session'}>
         <button
           type="button"
           className="card pick-row"
@@ -114,7 +136,7 @@ export function Sessions() {
           </div>
           <Icon name="chevron" size={18} />
         </button>
-        {SESSION_TEMPLATES.map((t) => (
+        {templates.map((t) => (
           <button
             key={t.id}
             type="button"
@@ -136,7 +158,7 @@ export function Sessions() {
         ))}
       </Sheet>
 
-      {edit && <SessionEditor key={edit.routine?.routineId ?? edit.template?.id ?? 'new'} routine={edit.routine} template={edit.template} today={today} onClose={() => setEdit(undefined)} />}
+      {edit && <SessionEditor key={edit.routine?.routineId ?? edit.template?.id ?? 'new'} routine={edit.routine} template={edit.template} kind={kind} today={today} onClose={() => setEdit(undefined)} />}
     </>
   )
 }
@@ -251,9 +273,10 @@ interface Draft {
   rep: RepeatState
   coinsOn: boolean
   coins: string
+  kind: RoutineKind
 }
 
-function SessionEditor({ routine, template, today, onClose }: { routine?: RoutineEvent; template?: SessionTemplate; today: Ymd; onClose: () => void }) {
+function SessionEditor({ routine, template, kind, today, onClose }: { routine?: RoutineEvent; template?: SessionTemplate; kind: RoutineKind; today: Ymd; onClose: () => void }) {
   const { act, toast } = useApp()
   const f = useFamily()
   const me = useMe()!
@@ -271,6 +294,7 @@ function SessionEditor({ routine, template, today, onClose }: { routine?: Routin
     rep: initialRepeat(routine?.recur),
     coinsOn: !!linked && !linked.deleted,
     coins: linked && !linked.deleted ? String(linked.coins) : '5',
+    kind: routine ? routineKindOf(routine) : kind,
   }))
   const [paste, setPaste] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -348,12 +372,14 @@ function SessionEditor({ routine, template, today, onClose }: { routine?: Routin
           exdates: d.scheduled ? routine?.exdates : undefined,
           taskId,
           part: routine?.part,
+          // Saved only when it differs from what the session looks like, so older phones see no change.
+          kind: routine?.kind || d.kind !== routineKindOf({ ...routine, title: d.title, steps, kind: undefined }) ? d.kind : undefined,
         },
         now,
       ),
     )
     act(out)
-    toast(routine ? 'Saved.' : 'Session added.')
+    toast(routine ? (routine && routineKindOf(routine) !== d.kind ? `Saved. It’s under ${d.kind === 'routine' ? 'Routines' : 'Focus'} now.` : 'Saved.') : 'Added.')
     onClose()
   }
 
@@ -374,9 +400,24 @@ function SessionEditor({ routine, template, today, onClose }: { routine?: Routin
         </label>
         <label className="field grow">
           <span>Name</span>
-          <input className="tbox" value={d.title} onChange={(e) => set({ title: e.target.value })} placeholder="e.g. Morning routine" />
+          <input className="tbox" value={d.title} onChange={(e) => set({ title: e.target.value })} placeholder={KIND_TEXT[d.kind].placeholder} />
         </label>
       </div>
+
+      {!routine?.homework && !routine?.plants && (
+        <div className="field kind-field">
+          <span>Where it lives</span>
+          <Seg<RoutineKind>
+            label="Where it lives"
+            value={d.kind}
+            onChange={(k) => set({ kind: k })}
+            options={[
+              { id: 'routine', label: '🌅 Routines' },
+              { id: 'focus', label: '⏱️ Focus' },
+            ]}
+          />
+        </div>
+      )}
 
       <div className="field">
         <span>Whose is it?</span>
