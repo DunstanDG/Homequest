@@ -671,3 +671,10 @@ html.calm-zoom .seg { flex-wrap: wrap; }
 html.calm-zoom .list li { flex-wrap: wrap; }
 html.calm-zoom .plan-days { grid-template-columns: minmax(0, 1fr); }
 html.calm-zoom .plan-day { min-width: 0; overflow-wrap: anywhere; }
+
+/* The StudyQuest stat pair (level, days played) can't push past the screen: the columns may shrink, and with big text
+   they stack. */
+.stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.stat > div { min-width: 0; }
+.calm-text-large .stat-row,
+.calm-text-larger .stat-row { grid-template-columns: minmax(0, 1fr); }

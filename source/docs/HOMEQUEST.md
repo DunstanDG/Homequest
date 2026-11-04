@@ -182,6 +182,29 @@ Thirteen features, built in one pass (item 26 — mystery box, streak shields, c
 - **Daily trivia is the same for the whole family on a given day** (a hash of the date picks the card, like the spelling word list), one go per person per day, and pays out a small flat coin reward on completion.
 - **Family crowdfunding goals are a voluntary, immediate spend of a member's own coins — no parent approval**, unlike a treat request. A parent creates/edits/removes goals; anyone can chip in whatever they choose (up to what they have available) and watch the shared progress bar fill.
 
+## The calm release (0.18)
+
+The app's purpose, as the family put it: **reduce stress** by making tasks automated and visible, make dealing with them
+enjoyable and rewarding, support neurodiverse people, and keep planning big and small things from becoming
+overwhelming or triggering. 0.18 reworked the app around that. Each area has its own write-up in `docs/calm/`:
+
+| Area | What changed | Write-up |
+| --- | --- | --- |
+| Today and tasks | One thing / Three / Everything focus modes (children default to one), progress that only counts up, no "late" or red, Fresh start, children only see their own brain-dump items, no clash warnings for children, First, then | `docs/calm/A-today.md` |
+| Rewards | A celebration on every tick (adjustable, calm with low stimulation), Look what you did, family goal bar, a bonus for getting started, forgiving StudyQuest streaks, Shop progress | `docs/calm/B-rewards.md` |
+| Comfort and accessibility | `/settings/calm`: text size, readable font, high contrast, low stimulation, no ticking countdowns; the 🌿 Calm button and sheet (breather, one thing today, pause reminders, ask for help); heads-up banners before leaving | `docs/calm/C-access.md` |
+| Notifications | Bundled, a daily cap, an optional morning summary, children reminded once, held while someone has paused, kinder words (`supabase/schema_v7.sql`) | `docs/calm/D-notify.md` |
+| Planning | Plan a thing templates, Pick 3 for this week, Someday, projects lead with the next step | `docs/calm/E-plan.md` |
+| Navigation | One Weekly plan (`/week`) instead of the summit and round table, routines in one place, a short More with search, a Settings screen | `docs/calm/F-nav.md` |
+
+`src/app/calm.ts` holds the shared comfort settings (device-local, `settings.calm`); `docs/calm/CONTRACT.md` is how the
+work was split. `npm run audit:layout` checks every screen at iPhone 16 Pro, Pixel 8a and Pixel 9 sizes; add
+`&calm=larger+readable` to a persona (e.g. `PERSONAS='1&calm=larger,maya'`) to check with bigger text.
+
+**Home server note:** the home server's "on track?" questions and spoken announcements don't know about the Calm pause
+yet. They should skip a member whose latest `calm-pause` event has `until` in the future. That change belongs in the
+home server's code, which isn't in this repository.
+
 ## One server for every family, by invitation (0.17)
 
 The app is built with the family server's URL and public key (`.env.production`), so nobody types Supabase details any more.

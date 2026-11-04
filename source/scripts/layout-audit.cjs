@@ -17,7 +17,8 @@ const DEVICES = [
 ]
 const ROUTES = (process.env.ROUTES || [
   '/', '/calendar', '/calendar?v=plans', '/plan', '/plan?t=dump', '/plan?t=meals', '/plan?t=projects', '/plan?t=sessions', '/plan?t=shop',
-  '/house/rooms', '/care', '/care?s=plants', '/vault', '/summit', '/round-table', '/baby', '/school', '/travel', '/assistant', '/shop',
+  '/house/rooms', '/care', '/care?s=plants', '/vault', '/week', '/baby', '/school', '/travel', '/assistant', '/shop',
+  '/plan?t=routines', '/plan/new-thing', '/settings', '/settings/calm',
   '/learn', '/spelling', '/skills', '/rewards', '/news', '/more',
   '/parent?tab=approvals', '/parent?tab=progress', '/parent?tab=family', '/parent?tab=data',
 ].join(',')).split(',')
@@ -100,7 +101,7 @@ async function measure(page) {
         const w = Math.min(A.right, B.right) - Math.max(A.left, B.left), h = Math.min(A.bottom, B.bottom) - Math.max(A.top, B.top)
         if (w > 3 && h > 3) {
           // Ignore elements stacked in different fixed layers (e.g. bottom nav over content).
-          const fixed = (e) => { for (let x = e; x; x = x.parentElement) { const p = getComputedStyle(x).position; if (p === 'fixed' || p === 'sticky') return x } return null }
+          const fixed = (e) => { for (let x = e; x; x = x.parentElement) { const p = getComputedStyle(x).position; if (p === 'fixed' || p === 'sticky' || x.matches('nav.tabbar')) return x } return null }
           if (fixed(a) !== fixed(b)) continue
           out.overlaps.push(`${desc(a)}  ⟷  ${desc(b)} (${Math.round(w)}x${Math.round(h)})`)
         }
@@ -124,7 +125,7 @@ async function measure(page) {
       const errors = []
       page.on('pageerror', (e) => errors.push(String(e)))
       for (const route of ROUTES) {
-        if (who !== '1' && route.startsWith('/parent')) continue
+        if (!who.startsWith('1') && route.startsWith('/parent')) continue
         await page.goto(`${BASE}?demo=${who}#${route}`, { waitUntil: 'networkidle' }).catch(() => {})
         await page.waitForTimeout(500)
         if (route.startsWith('/parent')) { await unlock(page); await page.waitForTimeout(300) }
