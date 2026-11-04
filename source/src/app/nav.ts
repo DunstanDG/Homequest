@@ -301,6 +301,7 @@ export const FEATURES: Feature[] = [
   { id: 'sync', emoji: '☁️', label: 'Phones, sharing and backup', desc: 'The family code, sync, notifications and backups', to: '/parent?tab=data&s=sync', group: 'phones', roles: ['parent'], keywords: 'notifications invite code export' },
   { id: 'private', emoji: '🔑', label: 'Private keys', desc: 'Who can read private thoughts', to: '/parent?tab=data&s=private', group: 'phones', roles: ['parent'], keywords: 'privacy encryption' },
   { id: 'voice', emoji: '🗣️', label: 'Voice logging', desc: 'Log a feed or nappy by talking to the speaker', to: '/parent?tab=data&s=voice', group: 'phones', roles: ['parent'], keywords: 'alexa speaker', show: hasBaby },
+  { id: 'announce', emoji: '🔊', label: 'Read-outs', desc: 'Have tasks read out loud when they’re due, on a tablet or the home speakers', to: '/settings/announcements', group: 'phones', roles: BOTH, keywords: 'announce speak speaker read aloud voice kitchen tablet tts' },
   { id: 'homeserver', emoji: '🖥️', label: 'The home server', desc: 'Travel, alarms, the round table and the family assistant at home', to: '/parent?tab=data&s=home-server', group: 'phones', roles: ['parent'], keywords: 'hermes gemini round table' },
 
   // ---- Settings: help and updates

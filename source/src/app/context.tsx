@@ -37,6 +37,8 @@ export interface Settings {
   notifyTypes?: Partial<Record<NotifyKind, boolean>>
   /** Calm and accessibility settings for the person holding this phone (src/app/calm.ts). */
   calm?: import('./calm').CalmPrefs
+  /** This device reads out tasks when they're due (Settings › Read-outs, src/app/announcer.tsx). */
+  announcer?: import('./announcer').AnnouncerPrefs
 }
 
 export type NotifyKind = 'meds' | 'tasks' | 'sleep' | 'feeds' | 'events' | 'homework' | 'checkin'

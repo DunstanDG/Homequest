@@ -183,6 +183,8 @@ export interface ServerFeaturesEvent extends EventBase {
   version: string
   /** 0.11+: the family assistant's address on the tailnet (Hermes), if one is set up. */
   assistantUrl?: string
+  /** 0.19+: the server reads out tasks marked "announce" on the home speakers (see docs/ANNOUNCEMENTS.md). */
+  taskAnnouncements?: boolean
 }
 
 /** "Check connection": the app asks, the server answers with the same pingId. */

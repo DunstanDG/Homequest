@@ -167,6 +167,9 @@ export interface TaskEvent extends EventBase {
   dropped?: { by: MemberId; at: number; why?: string }
   /** Marked by the current assignee as "could use a hand" — shows on other adults' lists until claimed. */
   helpWanted?: boolean
+  /** Read it out loud when it's due (needs `time`): on any announcer device (a phone or tablet left on HomeQuest) and,
+   * once the home server supports it (`server-features.taskAnnouncements`), the home speakers. See family/announce.ts. */
+  announce?: boolean
   /** Who held this task just before the current assignee took it over, for "picked up from X" wording. Cleared on the next reassignment. */
   handoffFrom?: MemberId
   deleted?: boolean
@@ -1023,6 +1026,8 @@ export type FamilyEvent =
   | WeekFocusEvent
   | DumpPromptSettingEvent
   | CalmPauseEvent
+  | TaskAnnouncedEvent
+  | AnnouncerEvent
   | TriviaDoneEvent
   | CoinGoalEvent
   | CoinGoalGiftEvent
@@ -1087,6 +1092,24 @@ export interface DumpPromptSettingEvent extends EventBase {
  * Latest per member wins; `until <= now` means not paused ("Back to normal" writes `until: now`). The notification
  * server holds back pushes while it's on. `askHelp` asks a grown-up (or the family) for a calm moment and some help;
  * a parent's "I'm on it" re-writes it with `askHelp: false` and `helper` set. */
+/** A task's due time was read out, by an announcer device or the home server, so nobody reads it out again.
+ * `key` is `${taskId}|${date}`. Append-only; the first one wins. */
+export interface TaskAnnouncedEvent extends EventBase {
+  type: 'task-announced'
+  key: string
+  /** The announcer device's id, or 'server'. */
+  by: string
+}
+
+/** A phone or tablet that reads out tasks when they're due (Settings › Read-outs). Upsert by deviceId, so the task form
+ * can say where an announcement will be heard. */
+export interface AnnouncerEvent extends EventBase {
+  type: 'announcer'
+  deviceId: string
+  name: string
+  on: boolean
+}
+
 export interface CalmPauseEvent extends EventBase {
   type: 'calm-pause'
   memberId: MemberId
@@ -1419,6 +1442,10 @@ export interface FamilyState {
   dumpPromptSettings: Record<MemberId, DumpPromptSettingEvent>
   /** memberId -> their latest "I'm overwhelmed" pause (calm-pause). Latest wins. */
   calmPauses: Record<MemberId, CalmPauseEvent>
+  /** `${taskId}|${date}` -> the first read-out of that task on that day. */
+  announced: Record<string, TaskAnnouncedEvent>
+  /** deviceId -> the announcer devices (latest wins). */
+  announcers: Record<string, AnnouncerEvent>
   triviaDone: Record<string, TriviaDoneEvent>
   goals: Record<string, CoinGoalEvent>
   goalGifts: CoinGoalGiftEvent[]

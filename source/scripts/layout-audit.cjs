@@ -18,7 +18,7 @@ const DEVICES = [
 const ROUTES = (process.env.ROUTES || [
   '/', '/calendar', '/calendar?v=plans', '/plan', '/plan?t=dump', '/plan?t=meals', '/plan?t=projects', '/plan?t=sessions', '/plan?t=shop',
   '/house/rooms', '/care', '/care?s=plants', '/vault', '/week', '/baby', '/school', '/travel', '/assistant', '/shop',
-  '/plan?t=routines', '/plan/new-thing', '/settings', '/settings/calm',
+  '/plan?t=routines', '/plan/new-thing', '/settings', '/settings/calm', '/settings/announcements',
   '/learn', '/spelling', '/skills', '/rewards', '/news', '/more',
   '/parent?tab=approvals', '/parent?tab=progress', '/parent?tab=family', '/parent?tab=data',
 ].join(',')).split(',')
