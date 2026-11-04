@@ -15,6 +15,7 @@ import type { Member, Ymd } from '@/family/types'
 import { Avatar } from '@/ui/fam'
 import { Icon } from '@/ui/icons'
 import { TaskSheet, type TaskDefaults } from './shared'
+import { FreshStartButton } from './calmParts'
 
 /** 'today', 'tomorrow' or 'Mon 5 Oct', for the middle of a sentence. */
 const dayWord = (d: Ymd, today: Ymd): string => {
@@ -103,12 +104,12 @@ export function HomeworkNudgeCard({ child }: { child: Member }) {
   const week = ctx.schools[child.id]?.weekOf(today)?.week
   const mine = child.id === me.id
   return (
-    <section className="card callout attention">
+    <section className="card callout">
       <Icon name="info" size={24} />
       <div className="grow">
-        <h3>Nothing logged for {listOf(missing)} this week</h3>
+        <h3>Any homework from {listOf(missing)} this week?</h3>
         <p className="muted">
-          {listOf(missing)} usually set{missing.length === 1 ? 's' : ''} homework in Week {week}. {mine ? 'Check MCAS, then add it, or tap None set.' : `Worth checking MCAS with ${child.name}.`}
+          {listOf(missing)} usually set{missing.length === 1 ? 's' : ''} homework in Week {week}. {mine ? 'Want to have a quick look on MCAS? Add it here, or tap None set.' : `Maybe have a look on MCAS with ${child.name}.`}
         </p>
         <div className="chips small-gap">
           {missing.map((s) => (
@@ -128,7 +129,8 @@ export function HomeworkNudgeCard({ child }: { child: Member }) {
   )
 }
 
-/** One line per child for a parent: what's due, what isn't planned, what's late, what's waiting for a check. */
+/** One line per child for a parent: what's due, what isn't planned, what's left from before, what's waiting for a
+ * check. Never "late" or red (0.18): left-over pieces are "from before", with a Fresh start to give them new days. */
 export function HomeworkParentCard({ kids }: { kids: Member[] }) {
   const ctx = useCalCtx()
   const now = useNow(60_000)
@@ -143,14 +145,13 @@ export function HomeworkParentCard({ kids }: { kids: Member[] }) {
       <ul className="log-list">
         {rows.map(({ k, s }) => {
           const bits = [
-            s.overdue.length && `${s.overdue.length} late`,
-            s.slipped.length && `${s.slipped.length} behind plan`,
-            s.dueThisWeek.length && `${s.dueThisWeek.length} due this week`,
-            s.unplanned.length && `${s.unplanned.length} not planned`,
+            s.overdue.length && `${s.overdue.length} from before`,
+            s.slipped.length && `${s.slipped.length} to re-plan`,
+            s.dueThisWeek.length && `${s.dueThisWeek.length} this week`,
+            s.unplanned.length && `${s.unplanned.length} without a day yet`,
             s.waitingCheck.length && `${s.waitingCheck.length} to check`,
-            s.missing.length && `nothing logged for ${listOf(s.missing)}`,
+            s.missing.length && `nothing logged yet for ${listOf(s.missing)}`,
           ].filter(Boolean)
-          const attention = s.overdue.length > 0 || s.slipped.length > 0
           return (
             <li key={k.id}>
               <Avatar m={k} size={24} />
@@ -158,14 +159,16 @@ export function HomeworkParentCard({ kids }: { kids: Member[] }) {
                 <strong>{k.name}</strong>
                 <small className="muted"> {bits.join(' · ') || 'all handed in'}</small>
               </span>
-              {attention && <span className="pill tone-warn">Look</span>}
             </li>
           )
         })}
       </ul>
-      <Link to="/school" className="btn block">
-        Open homework
-      </Link>
+      <div className="btn-row">
+        <Link to="/school" className="btn small">
+          Open homework
+        </Link>
+        <FreshStartButton memberIds={rows.filter(({ s }) => s.overdue.length || s.slipped.length).map(({ k }) => k.id)} today={today} only={(t) => t.kind === 'homework'} className="btn small ghost" />
+      </div>
     </section>
   )
 }
@@ -257,12 +260,13 @@ export function HomeworkSummitStep({ kids }: { kids: Member[] }) {
               <span className="muted">
                 {' '}
                 · {s.open.length} open · {nextWeek.length} due next week · {s.unplanned.length} not planned
-                {s.overdue.length ? ` · ${s.overdue.length} late` : ''}
+                {s.overdue.length ? ` · ${s.overdue.length} from before` : ''}
               </span>
             </p>
-            {s.overdue.length > 0 && <p className="note">Late: {s.overdue.map((t) => `${t.subject ? `${t.subject}: ` : ''}${t.title}`).join(', ')}</p>}
+            {s.overdue.length > 0 && <p className="note">From before: {s.overdue.map((t) => `${t.subject ? `${t.subject}: ` : ''}${t.title}`).join(', ')}</p>}
             <div className="btn-row">
               <PlanAllButton child={k} />
+              <FreshStartButton memberIds={[k.id]} today={today} only={(t) => t.kind === 'homework'} className="btn small ghost" />
             </div>
           </div>
         )

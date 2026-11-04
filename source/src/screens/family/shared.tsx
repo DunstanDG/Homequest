@@ -785,21 +785,21 @@ export function TaskLine({
   const finished = !!d && d.status !== 'rejected'
   const sub: string[] = []
   if (t.subject && t.kind === 'homework') sub.push(t.subject)
-  if (row.slipped && t.doOn) sub.push(`planned for ${dayName(t.doOn)}`)
-  if (row.dueIn !== undefined && !finished)
-    sub.push(row.overdue ? `${Math.abs(row.dueIn)} day${Math.abs(row.dueIn) === 1 ? '' : 's'} late` : row.dueIn === 0 ? 'due today' : row.dueIn === 1 ? 'due tomorrow' : `due in ${row.dueIn} days`)
+  // Kind wording (0.18): nothing is ever "late". Left-over things are simply "from before", in neutral colours.
+  if (row.slipped && t.doOn) sub.push(`was planned for ${dayName(t.doOn)}`)
+  if (row.dueIn !== undefined && !finished) sub.push(row.overdue ? 'from before' : row.dueIn === 0 ? 'for today' : row.dueIn === 1 ? 'for tomorrow' : `in ${row.dueIn} days`)
   if (t.time) sub.push(t.time)
   if (t.minutes) sub.push(`${t.minutes} min`)
   if (dateLabel) sub.push(dateLabel)
   return (
-    <li className={`task-line${finished ? ' done' : ''}${row.overdue ? ' overdue' : ''}${d?.status === 'rejected' ? ' redo' : ''}`}>
+    <li className={`task-line${finished ? ' done' : ''}${row.overdue ? ' from-before' : ''}${d?.status === 'rejected' ? ' redo' : ''}`}>
       <CheckCircle done={finished} pending={d?.status === 'pending'} onClick={onToggle} label={finished ? `Undo ${t.title}` : `Done: ${t.title}`} disabled={!canTick} />
       <button type="button" className="tl-main" onClick={onOpen}>
         <strong>{t.title}</strong>
         <small>
           {sub.join(' · ')}
           {d?.status === 'pending' && ` ${sub.length ? '· ' : ''}waiting for a parent to check`}
-          {d?.status === 'rejected' && ` ${sub.length ? '· ' : ''}${d.checkNote ? `try again: ${d.checkNote}` : 'try again'}`}
+          {d?.status === 'rejected' && ` ${sub.length ? '· ' : ''}${d.checkNote ? `have another go: ${d.checkNote}` : 'have another go'}`}
         </small>
       </button>
       {t.coins > 0 && <Coins n={t.coins} tone={finished ? 'good' : 'xp'} />}

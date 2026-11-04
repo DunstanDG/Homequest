@@ -39,12 +39,16 @@ interface Need {
   tone?: 'warn'
 }
 
+/** Needs you shows the most important few (approvals first); the rest fold behind "N more" (calm Today, 0.18). */
+const NEEDS_SHOWN = 3
+
 /** Everything waiting on this person, as short tappable rows. Renders nothing when there's nothing to do. */
 export function NeedsYou({ today, now, onOpenItem, children }: { today: Ymd; now: number; onOpenItem: (i: AgendaItem) => void; children?: ReactNode }) {
   const f = useFamily()
   const ctx = useCalCtx()
   const me = useMe()!
   const [helpOpen, setHelpOpen] = useState(false)
+  const [allNeeds, setAllNeeds] = useState(false)
   const parent = me.role === 'parent'
   const help = useMemo(() => helpWanted(ctx, today, 7, me.id).filter((h) => !h.offers.includes(me.id)), [ctx, today, me.id])
   const needVotes = rankIdeas(f).filter((t) => t.waiting.includes(me.id)).length
@@ -111,7 +115,7 @@ export function NeedsYou({ today, now, onOpenItem, children }: { today: Ymd; now
         <>
           <SectionHead title="Needs you" />
           <ul className="needs-list">
-            {rows.map((r) => {
+            {(allNeeds ? rows : rows.slice(0, NEEDS_SHOWN)).map((r) => {
               const body = (
                 <>
                   <span className="needs-emoji" aria-hidden="true">
@@ -137,6 +141,11 @@ export function NeedsYou({ today, now, onOpenItem, children }: { today: Ymd; now
               )
             })}
           </ul>
+          {rows.length > NEEDS_SHOWN && (
+            <button type="button" className="link-btn quiet needs-more" onClick={() => setAllNeeds((a) => !a)} aria-expanded={allNeeds}>
+              {allNeeds ? 'Show fewer' : `${rows.length - NEEDS_SHOWN} more`}
+            </button>
+          )}
         </>
       )}
       {children}

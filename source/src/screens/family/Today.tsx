@@ -41,8 +41,15 @@ import { isHereWeek } from '@/family/coparent'
 import { AgendaRow, ItemSheet } from './agenda'
 import { activitiesOnDay, arrivalDayOn, bornBabies, expectedBabies, focusOnDay } from '@/family/arrival/arrival'
 import { cancelTaskReminder, EventSheet, Group, KIND_EMOJI, PART_LABEL, TaskLine, TaskSheet, upcomingWeekAnchor, usePeople, useBalance } from './shared'
+import { useCalm, type FocusMode } from '@/app/calm'
+import { dumpForViewer, firstThen, nextUpOrder, pickNext, plannedAt, rowKey } from '@/family/calmToday'
+import { dayPlanOf } from '@/family/travel/daily'
+import { DoneToday, FirstThenStrip, FocusControl, FreshStartButton, NextUpCard } from './calmParts'
 
 const PART_ORDER: DayPart[] = ['morning', 'day', 'afternoon', 'evening', 'any']
+
+/** "Not now" in the one-thing view: skipped for the rest of this visit (per person and day), nothing is stored. */
+const skippedByDay = new Map<string, Set<string>>()
 
 export function Today() {
   const nav = useNavigate()
@@ -70,6 +77,16 @@ export function Today() {
   const learner = useLearnerOf(view.id)
   const bal = useBalance(view.id)
   const isChild = view.role === 'child'
+  const calm = useCalm()
+  const paused = mine && calm.paused
+  // Your own list follows your calm setting; someone else's day shows everything (a parent checking in).
+  const focus: FocusMode = mine ? calm.focus : 'all'
+  const [seeAll, setSeeAll] = useState(false)
+  const [more, setMore] = useState(false)
+  const [, setSkipTick] = useState(0)
+  useEffect(() => (setSeeAll(false), setMore(false)), [viewId])
+  const skipKey = `${view.id}|${today}`
+  const skipped = skippedByDay.get(skipKey) ?? new Set<string>()
 
   const rows = useMemo(() => tasksFor(ctx, view.id, today, now), [ctx, view.id, today, now])
   const items = useMemo(() => itemsOn(ctx, today, { members: [view.id], skipTasks: false, schoolDetail: isChild ? 'lessons' : 'block' }).filter((i) => i.source !== 'task' || !!i.start), [ctx, view.id, today, isChild])
@@ -114,6 +131,19 @@ export function Today() {
     const byPart = PART_ORDER.map((p) => ({ part: p, rows: todo.filter((r) => r.task.part === p) })).filter((g) => g.rows.length)
     return { overdue, byPart, done }
   }, [rows])
+  const dayBlocks = dayPlanOf(f, view.id, today)?.blocks
+  const ordered = useMemo(() => nextUpOrder(rows, now, plannedAt(dayBlocks)), [rows, now, dayBlocks])
+  const next = pickNext(ordered, skipped)
+  const notNow = (r: TaskRow) => {
+    skippedByDay.set(skipKey, new Set([...skipped, rowKey(r)]))
+    setSkipTick((n) => n + 1)
+  }
+  const startAgain = () => (skippedByDay.delete(skipKey), setSkipTick((n) => n + 1))
+  const ft = isChild && next ? firstThen(next.task.title, dayBlocks, now) : undefined
+  const nextCard = (r: TaskRow, o: { notNow?: boolean } = {}) => (
+    <NextUpCard row={r} canTick={canTick} ft={ft} onOpen={() => setOpenTask(r)} onStart={() => setTimerFor(r)} onDone={() => toggle(r)} onNotNow={o.notNow ? () => notNow(r) : undefined} />
+  )
+  const fresh = grouped.overdue.length > 0 && canTick && <FreshStartButton memberIds={[view.id]} today={today} className="btn small ghost" />
 
   const line = (r: TaskRow, dateLabel?: string) => (
     <TaskLine key={`${r.task.taskId}|${r.date}`} row={r} canTick={canTick} dateLabel={dateLabel} onToggle={() => toggle(r)} onOpen={() => setOpenTask(r)} onTimer={r.task.kind === 'chore' || r.task.kind === 'homework' || r.task.kind === 'study' || r.task.minutes ? () => setTimerFor(r) : undefined} />
@@ -121,25 +151,88 @@ export function Today() {
 
   const timeline = <DayTimeline items={items} now={now} today={today} mine={mine} title={mine ? 'Now & next' : `${view.name}'s day`} onOpen={setItem} />
 
+  const shownFocus: FocusMode = seeAll ? 'all' : focus
   const toDo = (
     <>
       <div className="sec-head">
         <div>
           <h2 className="section">{mine ? 'To do' : `${view.name}'s list`}</h2>
-          {rows.length > 0 && <p className="note sec-sub">{`${grouped.done.length} of ${rows.length} done`}</p>}
+          {rows.length > 0 && (
+            <p className="note sec-sub">
+              <DoneToday n={grouped.done.length} />
+            </p>
+          )}
         </div>
         <button type="button" className="link-btn" onClick={() => setEditTask({})}>
           + Task
         </button>
       </div>
+      {mine && rows.length > 0 && <FocusControl value={focus} onChange={(v) => (setSeeAll(false), setMore(false), calm.set({ focus: v }))} />}
       {rows.length === 0 && <p className="note">Nothing on the list. Enjoy the free time.</p>}
-      {grouped.overdue.length > 0 && <Group title="Overdue" count={grouped.overdue.length}>{grouped.overdue.map((r) => line(r))}</Group>}
-      {grouped.byPart.map((g) => (
-        <Group key={g.part} title={PART_LABEL[g.part]} count={g.rows.length}>
-          {g.rows.map((r) => line(r))}
-        </Group>
-      ))}
-      {grouped.done.length > 0 && <Group title="Done" count={grouped.done.length}>{grouped.done.map((r) => line(r))}</Group>}
+      {shownFocus === 'one' && rows.length > 0 && (
+        <>
+          {next ? (
+            nextCard(next, { notNow: ordered.length > 1 })
+          ) : ordered.length > 0 ? (
+            <div className="card calm-note">
+              <p>That's everything for now. Have a rest.</p>
+              <button type="button" className="link-btn" onClick={startAgain}>
+                Show me one again
+              </button>
+            </div>
+          ) : (
+            <div className="card calm-note">
+              <p>All done for today. Lovely work.</p>
+            </div>
+          )}
+          {grouped.overdue.length > 0 && canTick && (
+            <p className="note calm-row">
+              A few things are from before. Want a fresh start? {fresh}
+            </p>
+          )}
+          {rows.length > 1 && (
+            <button type="button" className="link-btn quiet" onClick={() => setSeeAll(true)}>
+              See everything
+            </button>
+          )}
+        </>
+      )}
+      {shownFocus === 'three' && rows.length > 0 && (
+        <>
+          {ft && <FirstThenStrip ft={ft} />}
+          {ordered.length === 0 && <p className="note">All done for today. Lovely work.</p>}
+          {ordered.length > 0 && <ul className="task-list">{ordered.slice(0, 3).map((r) => line(r))}</ul>}
+          {ordered.length > 3 &&
+            (more ? (
+              <ul className="task-list">{ordered.slice(3).map((r) => line(r))}</ul>
+            ) : (
+              <button type="button" className="link-btn quiet" onClick={() => setMore(true)}>
+                {ordered.length - 3} more when you're ready
+              </button>
+            ))}
+          {grouped.overdue.length > 0 && canTick && <p className="note calm-row">A few things are from before. Want a fresh start? {fresh}</p>}
+          {more && grouped.done.length > 0 && <Group title="Done" count={grouped.done.length}>{grouped.done.map((r) => line(r))}</Group>}
+        </>
+      )}
+      {shownFocus === 'all' && (
+        <>
+          {ft && <FirstThenStrip ft={ft} />}
+          {grouped.overdue.length > 0 && (
+            <Group title={<>Still to do{fresh && <span className="group-action">{fresh}</span>}</>}>{grouped.overdue.map((r) => line(r))}</Group>
+          )}
+          {grouped.byPart.map((g) => (
+            <Group key={g.part} title={PART_LABEL[g.part]} count={g.rows.length}>
+              {g.rows.map((r) => line(r))}
+            </Group>
+          ))}
+          {grouped.done.length > 0 && <Group title="Done" count={grouped.done.length}>{grouped.done.map((r) => line(r))}</Group>}
+          {seeAll && (
+            <button type="button" className="link-btn quiet" onClick={() => setSeeAll(false)}>
+              Back to {focus === 'one' ? 'one thing' : 'three'}
+            </button>
+          )}
+        </>
+      )}
     </>
   )
 
@@ -255,7 +348,7 @@ export function Today() {
     baby: !isChild && <BabyPlanCard today={today} />,
     timeline,
     todo: toDo,
-    braindump: <BrainDumpBlock />,
+    braindump: <BrainDumpBlock child={me.role === 'child' ? me.id : isChild ? view.id : undefined} />,
     done: <DoneTodayBlock view={view} now={now} />,
     goal: <FamilyGoalBlock />,
     learning: isChild && (
@@ -312,11 +405,32 @@ export function Today() {
         </div>
       </header>
 
-      {people.length > 1 && (
+      {paused && (
+        <>
+          {timers.length > 0 && (
+            <div className="stack-gap">
+              {timers.map((t) => (
+                <MiniTimer key={t.id} timer={t} />
+              ))}
+            </div>
+          )}
+          {active && <ActiveBanner runId={active.id} />}
+          <section className="card calm-pause" aria-label="Taking it easy">
+            <p className="cp-line">{next ? "Taking it easy today. Here's just one thing, if you want it." : 'Taking it easy today.'}</p>
+            {!next && <p className="muted">Nothing needs doing right now. Rest is good.</p>}
+          </section>
+          {next && nextCard(next, { notNow: ordered.length > 1 })}
+          <button type="button" className="link-btn quiet" onClick={() => calm.resume()}>
+            Back to normal
+          </button>
+        </>
+      )}
+
+      {!paused && people.length > 1 && (
         <MemberChips members={people} value={[view.id]} onChange={(v) => setViewId(v[0] ?? me.id)} size="small" />
       )}
 
-      {Object.values(f.coparentLinks)
+      {!paused && Object.values(f.coparentLinks)
         .filter((l) => !l.deleted && l.childId === view.id)
         .map((l) => (
           <p key={l.linkId} className="note">
@@ -324,18 +438,18 @@ export function Today() {
           </p>
         ))}
 
-      {mine && <TodayBanner />}
+      {mine && !paused && <TodayBanner />}
 
-      <Seg
+      {!paused && <Seg
         value={mode}
         onChange={setMode}
         options={[
           { id: 'day', label: mine ? 'Today' : `${view.name}'s day` },
           { id: 'week', label: 'Week ahead' },
         ]}
-      />
+      />}
 
-      {mode === 'day' && (
+      {!paused && mode === 'day' && (
         <>
           {timers.length > 0 && (
             <div className="stack-gap">
@@ -362,7 +476,7 @@ export function Today() {
         </>
       )}
 
-      {mode === 'week' && (
+      {!paused && mode === 'week' && (
         <>
           <div className="row-between week-nav">
             <button type="button" className="icon-btn" onClick={() => setWeekAnchor(addDays(weekStart, -7))} aria-label="Previous week">
@@ -430,12 +544,12 @@ function TaskDetail({ row, onClose, onEdit, onTimer, onDrop, canEdit }: { row: T
           {t.source?.startsWith('school:') && <p className="note">Set by school.</p>}
           {d?.status === 'pending' && <p className="pill tone-warn">Waiting for a parent to check</p>}
           {d?.status === 'approved' && <p className="pill tone-good">Checked. Coins paid{d.checkedBy ? ` by ${f.members[d.checkedBy]?.name}` : ''}.</p>}
-          {d?.status === 'rejected' && <p className="pill tone-bad">Try again{d.checkNote ? `: ${d.checkNote}` : ''}</p>}
+          {d?.status === 'rejected' && <p className="pill tone-warn">Have another go{d.checkNote ? `: ${d.checkNote}` : ''}</p>}
           {!d || d.status === 'rejected' ? (
             <>
               {(t.kind === 'homework' || t.kind === 'chore' || t.kind === 'study') && (
                 <button type="button" className="btn primary big block" onClick={() => onTimer(row)}>
-                  <Icon name="timer" size={20} /> Start a timer
+                  <Icon name="timer" size={20} /> Ready to start? Start a timer
                 </button>
               )}
               <label className="field">
@@ -510,13 +624,15 @@ function BabyPlanCard({ today }: { today: string }) {
   return null
 }
 
-/** The open brain-dump items on Today, with a box to add one (same list and privacy rules as Plan > Brain dump). */
-function BrainDumpBlock() {
+/** The open brain-dump items on Today, with a box to add one (same list and privacy rules as Plan > Brain dump; a
+ * child's Today shows only their own items). */
+function BrainDumpBlock({ child }: { child?: MemberId }) {
   const f = useFamily()
   const me = useMe()!
   const { act } = useApp()
   const [text, setText] = useState('')
-  const all = dumpList(f)
+  // On a child's Today, only what's for them or what they wrote: the grown-ups' admin is not theirs to carry.
+  const all = dumpForViewer(f, dumpList(f), child)
   const shown = all.slice(0, 5)
   const send = () => {
     const t = text.trim()
@@ -529,20 +645,26 @@ function BrainDumpBlock() {
       <div className="sec-head">
         <div>
           <h2 className="section">Brain dump</h2>
-          <p className="note sec-sub">{all.length ? `${all.length} open` : 'Nothing waiting'}</p>
+          <p className="note sec-sub">{all.length ? `${all.length} written down` : child ? 'Anything on your mind?' : 'Nothing waiting'}</p>
         </div>
-        <Link to="/plan?t=dump" className="link-btn">
-          {all.length > shown.length ? `See all ${all.length}` : 'Open'}
-        </Link>
+        {me.role !== 'child' && (
+          <Link to="/plan?t=dump" className="link-btn">
+            {all.length > shown.length ? `See all ${all.length}` : 'Open'}
+          </Link>
+        )}
       </div>
       <div className="card">
         {shown.length > 0 && (
           <ul className="list tight">
             {shown.map((d) => (
               <li key={d.itemId}>
-                <Link to="/plan?t=dump" className="li-main" style={{ color: 'inherit', textDecoration: 'none' }}>
-                  {d.title}
-                </Link>
+                {me.role === 'child' ? (
+                  <span className="li-main">{d.title}</span>
+                ) : (
+                  <Link to="/plan?t=dump" className="li-main" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    {d.title}
+                  </Link>
+                )}
                 {d.area && <small className="muted">{d.area}</small>}
               </li>
             ))}

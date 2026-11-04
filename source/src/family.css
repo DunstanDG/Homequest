@@ -361,3 +361,38 @@ a.card.callout { text-decoration: none; color: inherit; }
 .skill-map svg { display: block; }
 .skill-node { cursor: pointer; }
 .skill-node text { font-size: 9px; fill: var(--text); }
+
+/* A: calm Today and tasks (0.18). Neutral colours for things from before, the one-thing card, count-up progress. */
+.task-line.from-before { border-color: var(--line); }
+.done-today { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.done-today .dt-track { fill: none; stroke: var(--line); stroke-width: 3; }
+.done-today .dt-fill { fill: none; stroke: var(--good); stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray 0.4s ease; }
+@media (prefers-reduced-motion: reduce) { .done-today .dt-fill { transition: none; } }
+.focus-seg { display: flex; gap: 4px; margin: 0 0 10px; padding: 3px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; max-width: 100%; }
+.focus-seg button { flex: 1; min-width: 0; min-height: 34px; padding: 4px 8px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.focus-seg button.on { background: var(--surface3); color: var(--text); }
+.first-then { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin: 0 0 10px; padding: 8px 12px; border-radius: 12px; background: var(--surface2); font-size: 14.5px; }
+.first-then small { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; margin-right: 2px; }
+.first-then strong { font-weight: 600; overflow-wrap: anywhere; }
+.first-then .ft-arrow { color: var(--muted); }
+.card.next-up { display: grid; gap: 10px; padding: 14px; }
+.next-up .first-then { margin: 0; }
+.next-up .eyebrow { margin: 0; }
+.nu-main { display: flex; align-items: center; gap: 12px; width: 100%; padding: 4px 0; background: none; border: 0; text-align: left; color: var(--text); cursor: pointer; }
+.nu-main > span:last-child { display: grid; gap: 2px; min-width: 0; }
+.nu-main strong { font-size: 19px; font-weight: 700; overflow-wrap: anywhere; }
+.nu-main small { color: var(--muted); font-size: 13px; }
+.nu-emoji { font-size: 30px; line-height: 1; flex: none; }
+.nu-actions { margin: 0; }
+.nu-actions .btn { flex: 1 1 0; min-width: 0; }
+.calm-note p { margin: 0 0 4px; }
+.calm-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.link-btn.quiet { display: block; margin: 6px auto 2px; padding: 8px 12px; color: var(--muted); font-size: 14px; cursor: pointer; }
+.group-title .group-action { margin-left: auto; text-transform: none; letter-spacing: 0; }
+.card.calm-pause { margin-top: 12px; text-align: center; }
+.calm-pause .cp-line { margin: 0; font-size: 17px; font-weight: 600; }
+.calm-pause .muted { margin: 6px 0 0; }
+.needs-list + .needs-more { margin-top: -6px; margin-bottom: 8px; }
+.fresh-start h3 { margin: 0 0 4px; }
+.nu-then { margin: 0; padding: 6px 10px; border-radius: 10px; background: var(--surface2); font-size: 14px; }
+.nu-then small { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; margin-right: 2px; }
