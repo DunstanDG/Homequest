@@ -180,3 +180,36 @@ html.night img, html.night .avatar { filter: brightness(0.85); }
 .kid-care .kc-row + .kc-row { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .kid-care .kc-acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .summit-label { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ------------------------------------------------------------ quick capture (0.20) */
+.cap { display: grid; gap: 8px; }
+.cap-kinds { margin: 0; }
+.cap-row { display: flex; gap: 8px; align-items: stretch; }
+.cap-input { flex: 1; min-width: 0; font-size: 17px; resize: none; field-sizing: content; min-height: 52px; max-height: 140px; line-height: 1.35; overflow-wrap: anywhere; font-family: inherit; }
+.cap-slash { flex: none; min-height: 0; padding: 0 12px; font-family: ui-monospace, Menlo, monospace; font-weight: 700; }
+.cap code { font-family: ui-monospace, Menlo, monospace; font-size: 0.92em; background: var(--surface2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; color: var(--text); overflow-wrap: anywhere; }
+.cap-example { margin: 0; }
+.cap-try { appearance: none; border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+.cap-card { border: 1px solid var(--line); background: var(--surface2); border-radius: 14px; padding: 10px 12px; display: grid; gap: 6px; }
+.cap-head { display: grid; gap: 2px; }
+.cap-kind { font-size: 13px; color: var(--accent); font-weight: 600; }
+.cap-kind small { color: var(--muted); font-weight: 400; }
+.cap-title { font-size: 17px; overflow-wrap: anywhere; }
+.cap-fields { margin: 0; display: grid; gap: 4px; }
+.cap-field { display: grid; grid-template-columns: 92px 1fr auto; gap: 8px; align-items: center; font-size: 15px; }
+.cap-field dt { color: var(--muted); font-size: 13px; }
+.cap-field dd { margin: 0; overflow-wrap: anywhere; }
+.cap-field small { color: var(--muted); }
+.cap-field.unsure dd { color: var(--warn); }
+.cap-field.unused { opacity: 0.55; }
+.cap-field.implied { grid-template-columns: 92px 1fr; }
+.cap-field.implied dd { color: var(--muted); font-style: italic; }
+.cap-x { appearance: none; border: 0; background: none; color: var(--muted); font-size: 20px; line-height: 1; width: 32px; height: 32px; cursor: pointer; border-radius: 8px; }
+.cap-next { display: grid; gap: 2px; }
+.cap-next .chips { margin: 4px 0; }
+.cap-next .note { margin: 0; }
+.cap-q { margin: 4px 0 0; font-weight: 600; }
+.cap-q .note { font-weight: 400; }
+.cap-type { border-style: dashed; }
+.cap-more { align-items: center; }
+.qa-or { margin: 18px 0 8px; color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }

@@ -43,6 +43,17 @@ export const AREA_LABEL: Record<Area, { label: string; emoji: string }> = {
 }
 
 export const RELEASES: ReleaseNote[] = [
+  // ---------------------------------------------------------------- 10 November 2026 (0.20, quick capture)
+  {
+    id: '2026-11-10-quick-capture',
+    date: '2026-11-10',
+    audience: 'all',
+    area: 'app',
+    emoji: '⚡',
+    title: 'Add anything from one line',
+    short: 'Quick capture',
+    body: 'Tap + and type a title, then \\ and more: “service car\\time 1:15 thurs\\@ the garage”. It works out whether it’s an event, task, meal or brain-dump item, shows what it read, and suggests the next thing to fill in. Tap a suggestion to see how it is typed.',
+  },
   // ---------------------------------------------------------------- 4 November 2026 (0.19)
   {
     id: '2026-11-04-read-outs',
