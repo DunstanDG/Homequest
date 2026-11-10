@@ -16,7 +16,7 @@ interface Opt<T extends string> {
 }
 
 /** A row of choices: real radio buttons (so arrow keys and screen readers work), drawn as a segmented control. */
-function Choice<T extends string>({ name, legend, hint, value, options, onChange, children }: { name: string; legend: string; hint?: string; value: T; options: Opt<T>[]; onChange(v: T): void; children?: ReactNode }) {
+export function Choice<T extends string>({ name, legend, hint, value, options, onChange, children }: { name: string; legend: string; hint?: string; value: T; options: Opt<T>[]; onChange(v: T): void; children?: ReactNode }) {
   return (
     <fieldset className="card calm-set">
       <legend className="calm-set-legend">{legend}</legend>
@@ -38,7 +38,7 @@ function Choice<T extends string>({ name, legend, hint, value, options, onChange
   )
 }
 
-function Toggle({ legend, hint, checked, onChange, children }: { legend: string; hint: string; checked: boolean; onChange(v: boolean): void; children?: ReactNode }) {
+export function Toggle({ legend, hint, checked, onChange, children }: { legend: string; hint: string; checked: boolean; onChange(v: boolean): void; children?: ReactNode }) {
   return (
     <div className="card calm-set">
       <label className="switch-row calm-switch">

@@ -24,7 +24,7 @@ describe('release notes', () => {
   })
 
   it('only link to screens that exist', () => {
-    const routes = ['/', '/calendar', '/plan', '/care', '/learn', '/shop', '/school', '/welcome', '/news', '/parent', '/summit', '/vault', '/baby', '/more', '/travel', '/assistant', '/round-table', '/week', '/settings', '/settings/calm', '/plan/new-thing']
+    const routes = ['/', '/calendar', '/plan', '/care', '/learn', '/shop', '/school', '/welcome', '/news', '/parent', '/summit', '/vault', '/baby', '/more', '/travel', '/assistant', '/round-table', '/week', '/settings', '/settings/calm', '/plan/new-thing', '/settings/announcements']
     for (const r of [...RELEASES, ...PARENT_TOUR, ...CHILD_TOUR]) if (r.to) expect(routes).toContain(r.to.split('?')[0])
   })
 
