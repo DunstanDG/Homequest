@@ -43,6 +43,8 @@ import { useQuietUpdate } from './update'
 import { ALL_NOTE_IDS, Welcome } from '@/screens/onboarding/Onboarding'
 import { CalmShell } from '@/ui/calmShell'
 import { CalmSettings } from '@/screens/settings/CalmSettings'
+import { AnnounceSettings } from '@/screens/settings/AnnounceSettings'
+import { TaskAnnouncer } from './announcer'
 
 function Shell({ newPerson }: { newPerson: boolean }) {
   const { pathname } = useLocation()
@@ -77,6 +79,7 @@ function Shell({ newPerson }: { newPerson: boolean }) {
     <>
       <RingingBanner />
       <CalmShell tabs={!hideTabs} />
+      <TaskAnnouncer />
       <div className={`app-body${hideTabs ? ' no-tabs' : ''}${showAdd ? ' has-fab' : ''}`}>
         <ErrorBoundary resetKey={pathname}>
           <Routes>
@@ -114,6 +117,7 @@ function Shell({ newPerson }: { newPerson: boolean }) {
             <Route path="/more" element={<More />} />
             <Route path="/settings" element={<SettingsHub />} />
             <Route path="/settings/calm" element={<CalmSettings />} />
+            <Route path="/settings/announcements" element={<AnnounceSettings />} />
             {import.meta.env.DEV && <Route path="/dev" element={<Gallery />} />}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

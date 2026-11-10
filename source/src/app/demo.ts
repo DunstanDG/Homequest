@@ -124,7 +124,7 @@ export async function seedDemo(repo: Repo): Promise<void> {
   // ---- tasks
   const task = (title: string, o: Partial<Parameters<typeof A.saveTask>[1]> & { assignee: string }) =>
     push(A.saveTask(sam, { title, kind: 'chore', part: 'any', date: d(-14), ...o } as Parameters<typeof A.saveTask>[1], tick()))
-  task('Pack school bag', { assignee: maya, kind: 'routine', part: 'evening', recur: { freq: 'daily', schoolDaysOnly: true }, check: 'self', coins: 2 })
+  task('Pack school bag', { assignee: maya, kind: 'routine', part: 'evening', recur: { freq: 'daily', schoolDaysOnly: true }, check: 'self', coins: 2, time: '19:30', announce: true })
   task('Empty the dishwasher', { assignee: maya, part: 'afternoon', minutes: 10, recur: { freq: 'weekly', byWeekday: [0, 2, 4] }, coins: 10 })
   task('Walk Biscuit', { assignee: maya, part: 'afternoon', minutes: 30, recur: { freq: 'daily' }, coins: 10, petLink: { petId: biscuit, kind: 'walk' } })
   task('Tidy bedroom', { assignee: maya, part: 'morning', minutes: 20, recur: { freq: 'weekly', byWeekday: [5] }, coins: 20 })

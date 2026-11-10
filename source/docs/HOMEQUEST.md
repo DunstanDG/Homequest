@@ -182,6 +182,18 @@ Thirteen features, built in one pass (item 26 — mystery box, streak shields, c
 - **Daily trivia is the same for the whole family on a given day** (a hash of the date picks the card, like the spelling word list), one go per person per day, and pays out a small flat coin reward on completion.
 - **Family crowdfunding goals are a voluntary, immediate spend of a member's own coins — no parent approval**, unlike a treat request. A parent creates/edits/removes goals; anyone can chip in whatever they choose (up to what they have available) and watch the shared progress bar fill.
 
+## Quick capture (0.20)
+
+The + button opens on one box for events, tasks, meals and brain-dump items: type a title, then `\` and more
+(`service car\time 1:15 thurs\@ Bill's Bangers`). It shows what it read and suggests the next field to fill in. See
+[docs/QUICK_CAPTURE.md](QUICK_CAPTURE.md).
+
+## Read-outs (0.19)
+
+Any task can be read out loud at its time ("It's half past four. Maya, it's time to empty the dishwasher."), by a phone
+or tablet left on HomeQuest and, once the home server supports it, the home speakers. See
+[docs/ANNOUNCEMENTS.md](ANNOUNCEMENTS.md).
+
 ## The calm release (0.18)
 
 The app's purpose, as the family put it: **reduce stress** by making tasks automated and visible, make dealing with them

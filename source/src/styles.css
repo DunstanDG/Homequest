@@ -678,3 +678,12 @@ html.calm-zoom .plan-day { min-width: 0; overflow-wrap: anywhere; }
 .stat > div { min-width: 0; }
 .calm-text-large .stat-row,
 .calm-text-larger .stat-row { grid-template-columns: minmax(0, 1fr); }
+
+/* Read-outs (announcer device): the one-tap unlock Safari and Chrome need before a page may speak, and the list. */
+/* Below sheets (50) and overlays (40), left-aligned so it never sits under the + button. */
+.announce-unlock { position: fixed; left: 16px; bottom: calc(var(--safe-b, 0px) + 84px); z-index: 30; max-width: calc(100vw - 104px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; padding: 10px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-weight: 600; box-shadow: 0 6px 20px rgb(0 0 0 / 0.35); cursor: pointer; }
+.announce-list { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; }
+.announce-list li { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.announce-list .grow { min-width: 0; overflow-wrap: anywhere; }
+.announce-time { font-variant-numeric: tabular-nums; font-weight: 700; flex: none; }
+.task-announce-where { display: block; margin-top: 2px; }

@@ -62,6 +62,8 @@ export function emptyFamily(): FamilyState {
     weekFocus: {},
     dumpPromptSettings: {},
     calmPauses: {},
+    announced: {},
+    announcers: {},
     triviaDone: {},
     goals: {},
     goalGifts: [],
@@ -255,6 +257,16 @@ export function applyFamilyEvent(prev: FamilyState, ev: AppEvent): FamilyState {
       return { ...prev, eventCount: prev.eventCount + 1, dumpPromptSettings: { ...prev.dumpPromptSettings, [ev.memberId]: ev } }
     case 'calm-pause':
       return { ...prev, eventCount: prev.eventCount + 1, calmPauses: { ...prev.calmPauses, [ev.memberId]: ev } }
+    case 'task-announced':
+      // The first read-out counts: a second device (or the server) that got there a moment later doesn't replace it.
+      if (typeof ev.key !== 'string' || prev.announced[ev.key]) return prev
+      return { ...prev, eventCount: prev.eventCount + 1, announced: { ...prev.announced, [ev.key]: ev } }
+    case 'announcer': {
+      if (typeof ev.deviceId !== 'string') return prev
+      const old = prev.announcers[ev.deviceId]
+      if (old && old.ts > ev.ts) return prev
+      return { ...prev, eventCount: prev.eventCount + 1, announcers: { ...prev.announcers, [ev.deviceId]: { ...ev, name: String(ev.name ?? '').slice(0, 40) || 'A device' } } }
+    }
     case 'habit':
       return { ...prev, eventCount: prev.eventCount + 1, habits: { ...prev.habits, [ev.habitId]: ev } }
     case 'habit-done':

@@ -43,6 +43,29 @@ export const AREA_LABEL: Record<Area, { label: string; emoji: string }> = {
 }
 
 export const RELEASES: ReleaseNote[] = [
+  // ---------------------------------------------------------------- 10 November 2026 (0.20, quick capture)
+  {
+    id: '2026-11-10-quick-capture',
+    date: '2026-11-10',
+    audience: 'all',
+    area: 'app',
+    emoji: '⚡',
+    title: 'Add anything from one line',
+    short: 'Quick capture',
+    body: 'Tap + and type a title, then \\ and more: “service car\\time 1:15 thurs\\@ the garage”. It works out whether it’s an event, task, meal or brain-dump item, shows what it read, and suggests the next thing to fill in. Tap a suggestion to see how it is typed.',
+  },
+  // ---------------------------------------------------------------- 4 November 2026 (0.19)
+  {
+    id: '2026-11-04-read-outs',
+    date: '2026-11-04',
+    audience: 'all',
+    area: 'today',
+    emoji: '🔊',
+    title: 'Any task can be read out loud when it’s due',
+    short: 'Read-outs',
+    body: 'Switch on “Read it out when it’s due” on a task, and a phone or tablet left on HomeQuest says it at its time: “It’s half past four. Maya, it’s time to empty the dishwasher.” Set a device up in Settings › Read-outs.',
+    to: '/settings/announcements',
+  },
   // ---------------------------------------------------------------- 4 November 2026 (0.18, the calm release)
   {
     id: '2026-11-04-calm-today-focus',

@@ -5,7 +5,7 @@ import { cancelNotification, cancelNotificationsByPrefix, scheduleNotification }
 import { peopleOf, type AgendaItem, type TaskRow } from '@/family/calendar'
 import { commentsFor } from '@/family/comments'
 import { suggestDoOn } from '@/family/homework'
-import { addDays, dayName, friendlyDay, startOfWeek, weekday, ymdOf } from '@/family/dates'
+import { addDays, dayName, friendlyDay, hmOf, startOfWeek, toMin, weekday, ymdOf } from '@/family/dates'
 import { balanceFor, suggestCoins } from '@/family/economy'
 import { eventReminderPrefix, eventReminderTag, taskReminderAt, taskReminderTag } from '@/family/notify'
 import { uid } from '@/engine/rng'
@@ -18,6 +18,8 @@ import { modeOf, serverOn } from '@/family/travel/travel'
 import type { TripSpec } from '@/family/travel/types'
 import { TripEditor, TripStatus } from './travelParts'
 import { PlanHelp } from './planHelp'
+import { Link } from 'react-router-dom'
+import { announceWhere, suggestAnnounceTime } from '@/family/announce'
 
 // ------------------------------------------------------------------ small hooks
 
@@ -275,6 +277,34 @@ export function CommentThread({ targetId }: { targetId: string }) {
 const PARTS: DayPart[] = ['morning', 'afternoon', 'evening', 'day', 'any']
 const KINDS: TaskKind[] = ['chore', 'homework', 'routine', 'study', 'other']
 
+/** "Read it out when it's due" on the task form, saying where it will be heard (family/announce.ts). */
+function AnnounceSwitch({ on, hasTime, onChange }: { on: boolean; hasTime: boolean; onChange(on: boolean): void }) {
+  const f = useFamily()
+  const where = announceWhere(f)
+  const places = [...(where.speakers ? ['the home speakers'] : []), ...where.devices.map((d) => `the ${d.replace(/^the\s+/i, '')}`)]
+  return (
+    <label className="switch-row">
+      <span className="sr-main">
+        <strong>🔊 Read it out when it’s due</strong>
+        <small className="muted task-announce-where">
+          {!on
+            ? 'Said out loud at its time, so nobody has to remember.'
+            : !hasTime
+              ? 'Pick a time above so it can be read out.'
+              : places.length
+                ? `It’ll be heard on ${places.length > 1 ? `${places.slice(0, -1).join(', ')} and ${places[places.length - 1]}` : places[0]}.`
+                : (
+                    <>
+                      No device reads things out yet. <Link to="/settings/announcements">Set one up</Link>
+                    </>
+                  )}
+        </small>
+      </span>
+      <input type="checkbox" className="switch" checked={on} onChange={(e) => onChange(e.target.checked)} />
+    </label>
+  )
+}
+
 export function TaskSheet({ open, onClose, task, defaults }: { open: boolean; onClose: () => void; task?: TaskEvent; defaults?: TaskDefaults }) {
   return (
     <Sheet open={open} onClose={onClose} title={task ? 'Edit task' : 'New task'}>
@@ -320,6 +350,7 @@ function TaskForm({ task, defaults, onDone }: { task?: TaskEvent; defaults?: Tas
   const [doOnTouched, setDoOnTouched] = useState(!!task?.doOn)
   const [notes, setNotes] = useState(task?.notes ?? '')
   const [petLink, setPetLink] = useState<{ petId: MemberId; kind: PetKind } | undefined>(task?.petLink)
+  const [announce, setAnnounce] = useState(!!task?.announce)
   const mins = Number(minutes) || undefined
   const suggested = suggestCoins(kind, mins)
   const shownCoins = coins === '' ? String(suggested) : coins
@@ -361,6 +392,7 @@ function TaskForm({ task, defaults, onDone }: { task?: TaskEvent; defaults?: Tas
       petLink,
       helpWanted: task?.helpWanted,
       handoffFrom: task?.handoffFrom,
+      announce: announce && time ? true : undefined,
     })
     act(evs)
     toast(task ? 'Task updated.' : 'Task added.')
@@ -399,10 +431,18 @@ function TaskForm({ task, defaults, onDone }: { task?: TaskEvent; defaults?: Tas
           <input type="date" className="tbox" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
         <label className="field">
-          <span>At (optional)</span>
+          <span>{announce ? 'At' : 'At (optional)'}</span>
           <input type="time" className="tbox" value={time} onChange={(e) => setTime(e.target.value)} />
         </label>
       </div>
+      <AnnounceSwitch
+        on={announce}
+        hasTime={!!time}
+        onChange={(on) => {
+          setAnnounce(on)
+          if (on && !time) setTime(suggestAnnounceTime(part, toMin(hmOf(Date.now()))))
+        }}
+      />
       {isHomework && (
         <label className="field">
           <span>Do it on</span>
@@ -788,7 +828,7 @@ export function TaskLine({
   // Kind wording (0.18): nothing is ever "late". Left-over things are simply "from before", in neutral colours.
   if (row.slipped && t.doOn) sub.push(`was planned for ${dayName(t.doOn)}`)
   if (row.dueIn !== undefined && !finished) sub.push(row.overdue ? 'from before' : row.dueIn === 0 ? 'for today' : row.dueIn === 1 ? 'for tomorrow' : `in ${row.dueIn} days`)
-  if (t.time) sub.push(t.time)
+  if (t.time) sub.push(t.announce ? `🔊 ${t.time}` : t.time)
   if (t.minutes) sub.push(`${t.minutes} min`)
   if (dateLabel) sub.push(dateLabel)
   return (

@@ -1,6 +1,9 @@
 /**
  * One "+" for the whole app: add a task, an event, something to buy, a brain-dump thought or an idea from any
  * screen, without first finding the right tab. Feed/nappy jumps to Care, which has its own big buttons.
+ *
+ * The sheet opens on Quick capture (one line, fields split with a backslash; see Capture.tsx), with the full forms
+ * underneath for anything it doesn't cover.
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -12,6 +15,7 @@ import { uid } from '@/engine/rng'
 import { EventSheet, TaskSheet } from '@/screens/family/shared'
 import { Icon } from '@/ui/icons'
 import { Sheet } from '@/ui/primitives'
+import { Capture } from './Capture'
 import { useApp, useFamily, useMe } from './context'
 
 type Kind = 'task' | 'event' | 'shop' | 'dump' | 'idea'
@@ -81,6 +85,8 @@ export function QuickAdd() {
         <Icon name="plus" size={28} />
       </button>
       <Sheet open={open && !kind} onClose={close} title="Add">
+        <Capture kinds={parent ? ['event', 'task', 'meal', 'dump'] : ['event', 'task']} onDone={close} />
+        <p className="qa-or">Or use a full form</p>
         <div className="qa-grid">
           {choices
             .filter((c) => c.show)
